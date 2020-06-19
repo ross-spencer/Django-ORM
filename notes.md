@@ -16,7 +16,8 @@ NOTES ON CREATE METS V2
 
 * Current dump/load strategy (to codify):
 
-	1. Dump from AM MySQL.
+	1. Dump from AM MySQL:
+		* `python src/manage.py dumpdata --exclude contenttypes --exclude auth.permission | python -m json.tool > fixtures/fixtures.json`
 	2. Switch to Harness SQLite.
 	3. Ensure migrations are run and fixtures loaded per below.
 

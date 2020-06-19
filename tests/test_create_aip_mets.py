@@ -765,7 +765,7 @@ class TestCustomStructMap(TempDirMixin, TestCase):
     ]
     fixtures = [os.path.join(THIS_DIR, "fixtures", p) for p in fixture_files]
     mets_xsd_path = os.path.abspath(
-        os.path.join(THIS_DIR, "../mcp-assets/mets/mets.xsd")
+        os.path.join(THIS_DIR, "fixtures/mcp-assets/mets/mets.xsd")
     )
 
     @staticmethod

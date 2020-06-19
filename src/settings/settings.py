@@ -3,6 +3,7 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
 """
 DATABASES = {
     "default": {
@@ -16,21 +17,32 @@ DATABASES = {
 }
 """
 
+
 DATABASES = {
     "default": {
         # Database driver
         "ENGINE": "django.db.backends.sqlite3",
         # Replace below with Database Name if using other database engines
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "NAME": os.path.join(BASE_DIR, "..", "db", "db.sqlite3"),
     }
 }
 
 
+
+"""
 INSTALLED_APPS = (
     "main",
+    #"django.contrib.contenttypes",
+    #"django.contrib.auth",
+    "fpr",
+)
+"""
+
+INSTALLED_APPS = (
+    "main",
+    "fpr",
     "django.contrib.contenttypes",
     "django.contrib.auth",
-    "fpr",
 )
 
 # SECURITY WARNING: Modify this secret key if using in production!

@@ -8,7 +8,7 @@ import create_aip_mets
 # Django specific settings
 import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.settings")
 
 import django
 
@@ -91,7 +91,7 @@ args_example = [
     "--baseDirectoryPathString",
     "SIPDirectory",
     "--fileGroupIdentifier",
-    "20fb8d59-c031-40ec-b08d-83a70f2eee69",
+    "b295dc11-087a-4776-b923-1910fb8732ba",
     "--fileGroupType",
     "sip_id",
     "--xmlFile",

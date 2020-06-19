@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mets:mets xmlns:mets="http://www.loc.gov/METS/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/version1121/mets.xsd">
+  <mets:metsHdr CREATEDATE="2020-06-19T04:17:28"/>
+  <mets:dmdSec ID="dmdSec_1">
+    <mets:mdWrap MDTYPE="PREMIS:OBJECT">
+      <mets:xmlData>
+        <premis:object xmlns:premis="http://www.loc.gov/premis/v3" xsi:type="premis:intellectualEntity" xsi:schemaLocation="http://www.loc.gov/premis/v3 http://www.loc.gov/standards/premis/v3/premis.xsd" version="3.0">
+          <premis:objectIdentifier>
+            <premis:objectIdentifierType>UUID</premis:objectIdentifierType>
+            <premis:objectIdentifierValue>b295dc11-087a-4776-b923-1910fb8732ba</premis:objectIdentifierValue>
+          </premis:objectIdentifier>
+          <premis:objectIdentifier>
+            <premis:objectIdentifierType>ULID</premis:objectIdentifierType>
+            <premis:objectIdentifierValue>01D9T8MJM9NEQ390H239VT50CQ</premis:objectIdentifierValue>
+          </premis:objectIdentifier>
+          <premis:objectIdentifier>
+            <premis:objectIdentifierType>EXID</premis:objectIdentifierType>
+            <premis:objectIdentifierValue>https://example.com/AIP/id/1348554167</premis:objectIdentifierValue>
+          </premis:objectIdentifier>
+          <premis:originalName>metsout</premis:originalName>
+        </premis:object>
+      </mets:xmlData>
+    </mets:mdWrap>
+  </mets:dmdSec>
+  <mets:fileSec/>
+  <mets:structMap TYPE="physical" ID="structMap_1" LABEL="Archivematica default">
+    <mets:div TYPE="Directory" LABEL="metsout" DMDID="dmdSec_1">
+      <mets:div TYPE="Directory" LABEL="objects"/>
+      <mets:div TYPE="Directory" LABEL="metadata"/>
+    </mets:div>
+  </mets:structMap>
+</mets:mets>

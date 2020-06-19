@@ -1,0 +1,45 @@
+<html>
+<body>
+  <form method="post" action="http://pim.fcla.edu/validate/results">
+    <label for="document">Enter XML Document:</label>
+    <br/>
+    <textarea id="directinput" rows="12" cols="76" name="document">&lt;?xml version='1.0' encoding='utf-8'?&gt;
+&lt;mets:mets xmlns:mets="http://www.loc.gov/METS/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.loc.gov/METS/ http://www.loc.gov/standards/mets/version1121/mets.xsd"&gt;
+  &lt;mets:metsHdr CREATEDATE="2020-06-19T04:17:28"/&gt;
+  &lt;mets:dmdSec ID="dmdSec_1"&gt;
+    &lt;mets:mdWrap MDTYPE="PREMIS:OBJECT"&gt;
+      &lt;mets:xmlData&gt;
+        &lt;premis:object xmlns:premis="http://www.loc.gov/premis/v3" xsi:type="premis:intellectualEntity" xsi:schemaLocation="http://www.loc.gov/premis/v3 http://www.loc.gov/standards/premis/v3/premis.xsd" version="3.0"&gt;
+          &lt;premis:objectIdentifier&gt;
+            &lt;premis:objectIdentifierType&gt;UUID&lt;/premis:objectIdentifierType&gt;
+            &lt;premis:objectIdentifierValue&gt;b295dc11-087a-4776-b923-1910fb8732ba&lt;/premis:objectIdentifierValue&gt;
+          &lt;/premis:objectIdentifier&gt;
+          &lt;premis:objectIdentifier&gt;
+            &lt;premis:objectIdentifierType&gt;ULID&lt;/premis:objectIdentifierType&gt;
+            &lt;premis:objectIdentifierValue&gt;01D9T8MJM9NEQ390H239VT50CQ&lt;/premis:objectIdentifierValue&gt;
+          &lt;/premis:objectIdentifier&gt;
+          &lt;premis:objectIdentifier&gt;
+            &lt;premis:objectIdentifierType&gt;EXID&lt;/premis:objectIdentifierType&gt;
+            &lt;premis:objectIdentifierValue&gt;https://example.com/AIP/id/1348554167&lt;/premis:objectIdentifierValue&gt;
+          &lt;/premis:objectIdentifier&gt;
+          &lt;premis:originalName&gt;metsout&lt;/premis:originalName&gt;
+        &lt;/premis:object&gt;
+      &lt;/mets:xmlData&gt;
+    &lt;/mets:mdWrap&gt;
+  &lt;/mets:dmdSec&gt;
+  &lt;mets:fileSec/&gt;
+  &lt;mets:structMap TYPE="physical" ID="structMap_1" LABEL="Archivematica default"&gt;
+    &lt;mets:div TYPE="Directory" LABEL="metsout" DMDID="dmdSec_1"&gt;
+      &lt;mets:div TYPE="Directory" LABEL="objects"/&gt;
+      &lt;mets:div TYPE="Directory" LABEL="metadata"/&gt;
+    &lt;/mets:div&gt;
+  &lt;/mets:structMap&gt;
+&lt;/mets:mets&gt;
+</textarea>
+    <br/>
+    <br/>
+    <input type="submit" value="Validate" />
+    <br/>
+  </form>
+</body>
+</html>
