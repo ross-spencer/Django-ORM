@@ -1495,11 +1495,18 @@ def write_mets(tree, filename):
     tree.write(filename, pretty_print=True, xml_declaration=True, encoding="utf-8")
 
     import cgi
+    import six
 
     tree = etree.tostring(
         tree, pretty_print=True, xml_declaration=True, encoding="utf-8"
     )
-    encoded_tree = cgi.escape(tree.decode())
+
+    # TODO HARNESS: A brief hack for compatibility. We can rewrite or remove
+    # this.
+    if six.PY3:
+        encoded_tree = cgi.escape(tree.decode())
+    else:
+        encoded_tree = cgi.escape(tree)
 
     validate_filename = filename + ".validatorTester.html"
     fileContents = """<html>
@@ -1877,9 +1884,10 @@ def call(jobs):
 
                 tree = etree.ElementTree(root)
                 write_mets(tree, XMLFile)
-
-                job.set_status(state.error_accumulator.error_count)
+                if state.error_accumulator.error_count != 0:
+                    job.set_status(state.error_accumulator.error_count, status_code="partial success")
+                job.set_status(state.error_accumulator.error_count, status_code="success")
             except Exception as err:
                 job.print_error(repr(err))
                 job.print_error(traceback.format_exc())
-                job.set_status(1)
+                job.set_status(1, status_code="failure")
