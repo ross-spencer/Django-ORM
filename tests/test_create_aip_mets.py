@@ -21,9 +21,9 @@ sys.path.append(
 )
 
 from job import Job
-import create_mets_v2
-import archivematicaCreateMETSMetadataCSV
-import archivematicaCreateMETSRights
+import create_aip_mets as create_mets_v2
+import create_mets_md_csv as archivematicaCreateMETSMetadataCSV
+import create_mets_rights as archivematicaCreateMETSRights
 
 from main.models import RightsStatement
 from . import TempDirMixin
@@ -567,7 +567,7 @@ class TestCSVMetadata(TempDirMixin, TestCase):
 class TestCreateDigiprovMD(TestCase):
     """ Test creating PREMIS:EVENTS and PREMIS:AGENTS """
 
-    fixture_files = ["agents.json", "sip.json", "files.json", "events-transfer.json"]
+    fixture_files = ["test_user.json", "agents.json", "sip.json", "files.json", "events-transfer.json"]
     fixtures = [os.path.join(THIS_DIR, "fixtures", p) for p in fixture_files]
 
     def test_creates_events(self):
@@ -765,7 +765,7 @@ class TestCustomStructMap(TempDirMixin, TestCase):
     ]
     fixtures = [os.path.join(THIS_DIR, "fixtures", p) for p in fixture_files]
     mets_xsd_path = os.path.abspath(
-        os.path.join(THIS_DIR, "../lib/assets/mets/mets.xsd")
+        os.path.join(THIS_DIR, "../mcp-assets/mets/mets.xsd")
     )
 
     @staticmethod
@@ -795,6 +795,8 @@ class TestCustomStructMap(TempDirMixin, TestCase):
             self.state.fileNameToFileID[
                 create_mets_v2._fixup_path_input_by_user(Job("stub", "stub", []), key)
             ] = self.state.fileNameToFileID.pop(key)
+
+
 
     def generate_aip_mets_v2_state(self):
         """Generate fileSec state
@@ -846,6 +848,10 @@ class TestCustomStructMap(TempDirMixin, TestCase):
             includeAmdSec=True,
         )
 
+
+
+
+
     def test_create_file_sec(self):
         """Test the output of a generating a fileSec
 
@@ -883,6 +889,7 @@ class TestCustomStructMap(TempDirMixin, TestCase):
         assert self.count_dir_objects(self.objects_dir) == len(
             self.state.fileNameToFileID
         ), "State hasn't been generated for all objects on disk, duplicate names may not be counted for"
+
 
     def test_get_included_structmap_invalid_mets(self):
         """Integration test ensuring that it is possible for the mets
@@ -999,6 +1006,7 @@ class TestCustomStructMap(TempDirMixin, TestCase):
                 assert (
                     fileid in self.state.fileNameToFileID.values()
                 ), "Expected FILEID not in returned structmap"
+
 
     def test_get_included_structmap_incomplete_mets(self):
         """Test the output of custom structmaps in create_mets_v2 where the

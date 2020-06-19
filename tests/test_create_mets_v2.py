@@ -6,12 +6,12 @@ import sys
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.abspath(os.path.join(THIS_DIR, "../lib/clientScripts")))
 
-from create_mets_v2 import createDMDIDsFromCSVMetadata
+from create_aip_mets import createDMDIDsFromCSVMetadata
 
 
 def test_createDMDIDsFromCSVMetadata_finds_non_ascii_paths(mocker):
     dmd_secs_creator_mock = mocker.patch(
-        "create_mets_v2.createDmdSecsFromCSVParsedMetadata", return_value=[]
+        "create_aip_mets.createDmdSecsFromCSVParsedMetadata", return_value=[]
     )
     state_mock = mocker.Mock(
         **{
