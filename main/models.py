@@ -4,6 +4,8 @@ from __future__ import absolute_import
 import logging
 import re
 
+from django.contrib.auth.models import User
+
 from django.db import IntegrityError
 from django.db import models, transaction
 from django.db.models.signals import post_save
@@ -726,7 +728,7 @@ class Directory(models.Model):
             )
         return cls.objects.bulk_create(paths)
 
-'''
+
 class FileFormatVersion(models.Model):
     """
     Link between a File and the FormatVersion it is identified as.
@@ -753,7 +755,7 @@ class FileFormatVersion(models.Model):
             _("%(file)s is %(format)s")
             % {"file": self.file_uuid, "format": self.format_version}
         )
-'''
+
 
 class JobQuerySet(models.QuerySet):
     def get_directory_name(self):
@@ -929,7 +931,6 @@ class Agent(models.Model):
         db_table = u"Agents"
 
 
-'''
 class UserProfile(models.Model):
     """ Extension of the User model for additional information. """
 
@@ -945,7 +946,6 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = u"main_userprofile"
-'''
 
 
 class Report(models.Model):
