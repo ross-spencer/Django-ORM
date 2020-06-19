@@ -16,7 +16,6 @@ DATABASES = {
 }
 """
 
-
 DATABASES = {
     "default": {
         # Database driver
@@ -27,7 +26,15 @@ DATABASES = {
 }
 
 
-INSTALLED_APPS = ("main",)
+INSTALLED_APPS = (
+    "main",
+    "django.contrib.contenttypes",
+    "django.contrib.auth",
+    "fpr",
+)
 
 # SECURITY WARNING: Modify this secret key if using in production!
 SECRET_KEY = "6few3nci_q_o@l1dlbk81%wcxe!*6r29yu629&d97!hiqat9fa"
+
+# Required for Pytest to work.
+USE_TZ = True
