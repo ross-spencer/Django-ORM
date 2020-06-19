@@ -25,6 +25,26 @@ NOTES ON CREATE METS V2
 	* `python manage.py makemigrations main`
 	* `python manage.py migrate`
 	* `python manage.py loaddata fixtures/fixtures.json`
+* Tests
+
+	* python2 -m pytest tests/test_create_aip_mets.py -p no:warnings
+
+* AM test suite expected failures:
+
+    @unittest.expectedFailure
+    def test_create_dc_dmdsec_no_dc_transfer_dc_xml(self):
+        # FIXME What is the expected behaviour of this? What should the fixture have?
+        # transfers_sip = os.path.join(THIS_DIR, 'fixtures', 'transfer_dc')
+        raise NotImplementedError()
+
+	commit 6e1625710ac1674f13663be474f32fd8e026c4ae
+	Author: Holly Becker <hbecker@artefactual.com>
+	Date:   Thu May 28 16:27:12 2015 -0700
+
+	    createMETS2: Fix no transfer DC bug
+
+	    Add tests for DC dmdSec.
+
 
 
 
