@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 #
 # This file is part of Archivematica.
 #
@@ -22,7 +22,7 @@
 # @author Joseph Perry <joseph@artefactual.com>
 # @version svn: $Id: 98d14ad9a2cd4dc038a89cd8820fe49740c2c05a $
 
-# /src/dashboard/src/main/models.py
+from __future__ import absolute_import
 
 import collections
 import csv

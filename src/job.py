@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+
 """
 A Job is MCP Client's representation of a unit of work to be
 performed--corresponding to a Task on the MCP Server side.  Jobs are run in
 batches by clientScript modules and populated with an exit code, standard out
 and standard error information.
 """
+from __future__ import absolute_import
 
 import traceback
 import sys

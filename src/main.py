@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
+
 # Turn off bytecode generation
+from __future__ import absolute_import, print_function
+
 import sys
 
 sys.dont_write_bytecode = True

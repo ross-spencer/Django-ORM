@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 #
 # This file is part of Archivematica.
 #
@@ -20,8 +20,7 @@
 # @package Archivematica
 # @subpackage archivematicaClientScript
 # @author Joseph Perry <joseph@artefactual.com>
-
-# /src/dashboard/src/main/models.py
+from __future__ import absolute_import
 
 import sys
 import uuid

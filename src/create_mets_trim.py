@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 #
 # This file is part of Archivematica.
 #
@@ -21,6 +21,7 @@
 # @subpackage archivematicaClientScript
 # @author Joseph Perry <joseph@artefactual.com>
 # @version svn: $Id: 7a5ac506287d33431cc63f734bf1f0962da99049 $
+from __future__ import absolute_import
 
 import os
 import sys

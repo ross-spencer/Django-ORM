@@ -1,4 +1,5 @@
-# -*- coding: latin-1 -*-
+# -*- coding: utf-8 -*-
+#
 # This file is part of Archivematica.
 #
 # Copyright 2010-2013 Artefactual Systems Inc. <http://artefactual.com>
@@ -25,6 +26,7 @@
 # Country Codes - ISO 3166
 # Country Name;ISO 3166-1-alpha-2 code
 
+from __future__ import absolute_import
 
 countryCodes = {
     "AFGHANISTAN": "AF",
