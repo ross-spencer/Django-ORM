@@ -36,11 +36,11 @@ class Jobs(object):
     def __init__(self, name, uuid, args, caller_wants_output=False):
         self.args = [name] + args
         self.int_code = 0
-        self.status_code = "success"
+        self.status_code = ""
         self.output = ""
         self.error = ""
 
-    def set_status(self, int_code, status_code="success"):
+    def set_status(self, int_code, status_code=""):
         if int_code:
             self.int_code = int(int_code)
         self.status_code = status_code
@@ -95,7 +95,7 @@ args_example = [
     "--baseDirectoryPathString",
     "SIPDirectory",
     "--fileGroupIdentifier",
-    "b295dc11-087a-4776-b923-1910fb8732ba",
+    "d140b9d9-807c-41c8-bb0a-16f1d2477ca5",
     "--fileGroupType",
     "sip_id",
     "--xmlFile",
@@ -107,7 +107,7 @@ args_example = [
 job = Jobs(name="create_mets", uuid="12345", args=args_example)
 jobs = [job]
 
+print("Creating AIP METS from harness")
 create_aip_mets.call(jobs)
-print(job.error)
-print(job.status_code)
+print("Status code ({}): {}".format(job.int_code, job.status_code))
 print("If success then METS should be partially or completely at", output_mets_file)
