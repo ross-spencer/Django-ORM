@@ -8,6 +8,11 @@ DATABASES = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": os.path.join(DB_DIR, "db", "db.sqlite3"),
     },
+}
+
+"""TODO this should be in our databases registry but tests are trying to pick
+it up incorrectly.
+
     "am": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "MCP",
@@ -16,7 +21,7 @@ DATABASES = {
         "HOST": "127.0.0.1",
         "PORT": "62001",
     },
-}
+"""
 
 # TODO: This should silence the system check we don't need for the SQL database
 # as we only ever read from it.
