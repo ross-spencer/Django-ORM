@@ -1525,8 +1525,9 @@ def write_mets(tree, filename):
         encoded_tree
     )
 
-    with open(validate_filename, "w") as f:
-        f.write(fileContents)
+    # METS HARNESS TODO: Ignore writing the validator code for now...
+    # with open(validate_filename, "w") as f:
+    #    f.write(fileContents)
 
 
 def get_paths_as_fsitems(baseDirectoryPath, objectsDirectoryPath):
