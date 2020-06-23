@@ -3,9 +3,13 @@
 # Turn off bytecode generation
 from __future__ import absolute_import, print_function
 
+import os
 import sys
 
 sys.dont_write_bytecode = True
+
+THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(THIS_DIR))
 
 import create_aip_mets
 
@@ -83,31 +87,35 @@ class Jobs(object):
             self.set_status(1)
 
 
-# basedir = /var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/metadataReminder/123-d2906daf-9205-4e11-907c-77b02622b74f/
-# xmlfile = /var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/metadataReminder/123-d2906daf-9205-4e11-907c-77b02622b74f/METS.d2906daf-9205-4e11-907c-77b02622b74f.xml
+def main():
+    # basedir = /var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/metadataReminder/123-d2906daf-9205-4e11-907c-77b02622b74f/
+    # xmlfile = /var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/metadataReminder/123-d2906daf-9205-4e11-907c-77b02622b74f/METS.d2906daf-9205-4e11-907c-77b02622b74f.xml
 
-output_mets_file = "metsout/METS.12345.xml"
+    output_mets_file = "metsout/METS.12345.xml"
 
-args_example = [
-    "--amdSec",
-    "--baseDirectoryPath",
-    "metsout",
-    "--baseDirectoryPathString",
-    "SIPDirectory",
-    "--fileGroupIdentifier",
-    "d140b9d9-807c-41c8-bb0a-16f1d2477ca5",
-    "--fileGroupType",
-    "sip_id",
-    "--xmlFile",
-    output_mets_file,
-    "--sipType",
-    "SIP",
-]
+    args_example = [
+        "--amdSec",
+        "--baseDirectoryPath",
+        "metsout",
+        "--baseDirectoryPathString",
+        "SIPDirectory",
+        "--fileGroupIdentifier",
+        "d140b9d9-807c-41c8-bb0a-16f1d2477ca5",
+        "--fileGroupType",
+        "sip_id",
+        "--xmlFile",
+        output_mets_file,
+        "--sipType",
+        "SIP",
+    ]
 
-job = Jobs(name="create_mets", uuid="12345", args=args_example)
-jobs = [job]
+    job = Jobs(name="create_mets", uuid="12345", args=args_example)
+    jobs = [job]
 
-print("Creating AIP METS from harness")
-create_aip_mets.call(jobs)
-print("Status code ({}): {}".format(job.int_code, job.status_code))
-print("If success then METS should be partially or completely at", output_mets_file)
+    print("Creating AIP METS from harness")
+    create_aip_mets.call(jobs)
+    print("Status code ({}): {}".format(job.int_code, job.status_code))
+    print("If success then METS should be partially or completely at", output_mets_file)
+
+if __name__ == "__main__":
+    main()
