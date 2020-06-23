@@ -1,0 +1,11 @@
+/var/archivematica/sharedDirectory/currentlyProcessing/demo_transfer_csv-3d81bc07-1962-4286-a85d-a9942b1a1991/objects/
+├── artwork
+│   ├── MARBLES.TGA
+│   └── Montréal.png
+├── beihai.tif
+├── bird.mp3
+├── ocr-image.png
+├── piiTestDataCreditCardNumbers.txt
+└── View_from_lookout_over_Queenstown_towards_the_Remarkables_in_spring.jpg
+
+1 directory, 7 files

@@ -1,42 +1,32 @@
 # -*- coding: utf-8 -*-
 
-# Turn off bytecode generation
 from __future__ import absolute_import, print_function
 
+from contextlib import contextmanager
 import os
 import sys
+import traceback
 
-sys.dont_write_bytecode = True
+import django
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR))
 
 import create_aip_mets
 
-# Django specific settings
-import os
-
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.settings")
-
-import django
 
 django.setup()
 
-# Import your models for use in your script
-from main.models import *
+from main.models import SIP
 
-# Start of application script (demo code below)
-# for u in User.objects.all():
-# 	print("ID: " + str(u.id) + "\tUsername: " + u.name)
-
-# for f in File.objects.all():
-# 	print(f)
-
-import traceback
-from contextlib import contextmanager
-
+sys.dont_write_bytecode = True
 
 class Jobs(object):
+    """Jobs mocks the Archivematica Jobs class. TODO: Might need some more work
+    to grab extra data from the METS script. Plus we need an idiomatic way to
+    output script generated log lines so we need to work on that here too.
+    """
     def __init__(self, name, uuid, args, caller_wants_output=False):
         self.args = [name] + args
         self.int_code = 0
@@ -68,7 +58,7 @@ class Jobs(object):
         elif file == sys.stderr:
             self.write_error(msg)
         else:
-            raise Exception("Unrecognised print file: " + str(file))
+            raise Exception("Unrecognized print file: " + str(file))
 
     @staticmethod
     def _to_str(thing):
@@ -86,21 +76,48 @@ class Jobs(object):
             self.write_error(traceback.format_exc())
             self.set_status(1)
 
+class AIP:
+    """AIP just provides a structured way to handle some of the data below
+    without relying on the model.
+    """
+    def __init__(self):
+        self.uuid = ""
+        self.name = ""
 
-def main():
-    # basedir = /var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/metadataReminder/123-d2906daf-9205-4e11-907c-77b02622b74f/
-    # xmlfile = /var/archivematica/sharedDirectory/watchedDirectories/workFlowDecisions/metadataReminder/123-d2906daf-9205-4e11-907c-77b02622b74f/METS.d2906daf-9205-4e11-907c-77b02622b74f.xml
+    def __str__(self):
+        return("{}, {}".format(self.name, self.uuid))
 
-    output_mets_file = "metsout/METS.12345.xml"
+from six.moves import input
 
+def mets_runner():
+    """mets_runner is our runner and will generate METS files based on the
+    input provided here.
+    """
+    aips = []
+    for sip in SIP.objects.all():
+        aip = AIP()
+        aip.uuid = sip.uuid
+        aip.name = sip.aip_filename.strip(".7z")
+        aips.append(aip)
+    print("# Select an AIP to create METS for:")
+    for idx, aip in enumerate(aips, 1):
+        print("{}:".format(idx), aip.name)
+    choice = input()
+    try:
+        print("Selected:", aips[int(choice)-1].name)
+    except IndexError:
+        print("Invalid choice:", choice)
+    choice_uuid = aips[int(choice)-1].uuid
+    folder = os.path.join("aips", aips[int(choice)-1].name)
+    output_mets_file = "mets/METS.{}.xml".format(choice_uuid)
     args_example = [
         "--amdSec",
         "--baseDirectoryPath",
-        "metsout",
+        folder,
         "--baseDirectoryPathString",
         "SIPDirectory",
         "--fileGroupIdentifier",
-        "d140b9d9-807c-41c8-bb0a-16f1d2477ca5",
+        choice_uuid,
         "--fileGroupType",
         "sip_id",
         "--xmlFile",
@@ -114,8 +131,14 @@ def main():
 
     print("Creating AIP METS from harness")
     create_aip_mets.call(jobs)
+    print("# Pyprint output:")
+    print(job.output.strip())
     print("Status code ({}): {}".format(job.int_code, job.status_code))
     print("If success then METS should be partially or completely at", output_mets_file)
+
+
+def main():
+    mets_runner()
 
 if __name__ == "__main__":
     main()

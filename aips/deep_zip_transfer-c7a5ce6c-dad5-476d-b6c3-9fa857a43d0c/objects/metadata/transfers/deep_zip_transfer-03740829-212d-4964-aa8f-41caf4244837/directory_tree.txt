@@ -1,0 +1,5 @@
+/var/archivematica/sharedDirectory/currentlyProcessing/deep_zip_transfer-03740829-212d-4964-aa8f-41caf4244837/objects/
+└── deep_zip_transfer
+    └── deep_zip_transfer.zip
+
+1 directory, 1 file

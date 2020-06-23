@@ -1,0 +1,16 @@
+/var/archivematica/sharedDirectory/currentlyProcessing/UnicodeStructmap-875316a9-5922-4786-93fb-d0478c2dd3b6/objects/
+├── Contraportada.jpg
+├── Cubierta_interior.jpg
+├── Cubrir.jpg
+├── Índice_01.jpg
+├── Índice_02.jpg
+├── Página_01.jpg
+├── Página_02.jpg
+├── Página_03.jpg
+├── Página_04.jpg
+├── Página_05.jpg
+├── Página_06.jpg
+├── Página_07.jpg
+└── Página_20.jpg
+
+0 directories, 13 files

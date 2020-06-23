@@ -14,23 +14,11 @@ NOTES ON CREATE METS V2
 	* structural link section (optional)
 	* behavior section (optional)
 
-* Current dump/load strategy (to codify):
-
-	1. Dump from AM MySQL:
-		* `python src/manage.py dumpdata --exclude contenttypes --exclude auth.permission | python -m json.tool > fixtures/fixtures.json`
-	2. Switch to Harness SQLite.
-	3. Ensure migrations are run and fixtures loaded per below.
-
-* Initial migration created from main/models.py using:
-
-	* `python manage.py makemigrations main`
-	* `python manage.py migrate`
-	* `python manage.py loaddata fixtures/fixtures.json`
 * Tests
 
-	* python2 -m pytest tests/test_create_aip_mets.py -p no:warnings
+	* Running `tox` from the root directory should work.
 
-* AM test suite expected failures:
+* AM test suite expected failures, e.g. `...x..`:
 
     @unittest.expectedFailure
     def test_create_dc_dmdsec_no_dc_transfer_dc_xml(self):
@@ -45,10 +33,6 @@ NOTES ON CREATE METS V2
 	    createMETS2: Fix no transfer DC bug
 
 	    Add tests for DC dmdSec.
-
-
-
-
 
 # Observations
 
@@ -68,3 +52,10 @@ with model 'fpr.FormatVersion', which is either not installed, or is abstract.
 * main.FileFormatVersion.format_version: (fields.E307) The field
 main.FileFormatVersion.format_version was declared with a lazy reference to
 'fpr.formatversion', but app 'fpr' isn't installed.
+
+* metadata folder seems to only need to exist for the filesec? Is that correct?
+It seems like that might be an error if that's the case.
+
+* # Delete empty directories, see #8427 -- is a strange artefact of the script
+and has the potential to modify the file-system structure. Try and understand
+why it exists.

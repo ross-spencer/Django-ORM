@@ -1,0 +1,10 @@
+/var/archivematica/sharedDirectory/currentlyProcessing/BaggedDemoTransferCSV-181f5cbd-053f-4251-8b2a-57607b3a3c98/objects/
+├── artwork
+│   └── MARBLES.TGA
+├── beihai.tif
+├── bird.mp3
+├── ocr-image.png
+├── piiTestDataCreditCardNumbers.txt
+└── View_from_lookout_over_Queenstown_towards_the_Remarkables_in_spring.jpg
+
+1 directory, 6 files
