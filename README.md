@@ -68,13 +68,11 @@ complexity:
 need to be specified here):
 	`python -m src.manage loaddata fixtures/fixtures.json`
 4. Organize your AIP layout in the aips folder. The structure should be a) a
-folder matching the name of the AIP in Archivematica. b) the objects directory.
-c) a metadata directory (this can apparently be blank, its use is to be
-determined). Example for the demo transfer, nb. its 'bag' structure is the
-primary part that has been removed.
+folder matching the name of the AIP in Archivematica. b) the objects directory
+belonging to the AIP below that. (Essentially the bag component is what has
+been removed.)
 ```
 demo_transfer_csv-15e219c3-0f51-4d32-80f4-577edfeceb05/
-├── metadata
 └── objects
     ├── artwork
     │   ├── MARBLES.TGA
