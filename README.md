@@ -123,7 +123,8 @@ compared._
 License
 -------
 
-GNU AFFERO GENERAL PUBLIC LICENSE Version 3: [Details](LICENSE)
+Copyright Artefactual Systems Inc (2020). GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3: [Details](LICENSE)
 
 Original License
 ----------------
