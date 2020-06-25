@@ -101,6 +101,25 @@ demo_transfer_csv-15e219c3-0f51-4d32-80f4-577edfeceb05/
     └── View_from_lookout_over_Queenstown_towards_the_Remarkables_in_spring.jpg
 ```
 
+Comparing two METS
+------------------
+
+There are a series of original-METS included in this repository. You might
+elect to recreate a METS with checksum: `15e219c3-0f51-4d32-80f4-577edfeceb05`.
+
+When you run the harness to do this it will be output into the `mets/` folder.
+
+Compare it using `git diff` as follows;
+```
+git diff --no-index mets/METS.15e219c3-0f51-4d32-80f4-577edfeceb05.xml \
+ original-mets/METS.15e219c3-0f51-4d32-80f4-577edfeceb05.xml
+```
+
+_**TODO:** More sophisticated mechanisms will be conjured as appropriate. For
+example, programatically replacing the date values in the new and original METS
+files with something generic so that they do not present as differences when
+compared._
+
 License
 -------
 
