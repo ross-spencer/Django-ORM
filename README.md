@@ -32,7 +32,9 @@ Quick Setup
 1. Create a virtual environment: `python -m virtualenv venv`
 2. Activate the virtual environment: `source venv/bin/activate`
 3. Install requirements: `pip install -r requirements.txt`
-4. Run it! `python -m src.mets_runner`
+4. The database migrations have already been run, so just load the fixtures:
+    `python -m src.manage loaddata fixtures/fixtures.json.zip`
+5. Run it! `python -m src.mets_runner`
 
 Running with non-default data
 -----------------------------
