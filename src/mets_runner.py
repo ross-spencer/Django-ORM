@@ -102,7 +102,11 @@ def mets_runner():
     print("# Select an AIP to create METS for:")
     for idx, aip in enumerate(aips, 1):
         print("{}:".format(idx), aip.name)
-    choice = input()
+    try:
+        choice = input()
+    except KeyboardInterrupt:
+        print("Keyboard interrupt detected, exiting...")
+        sys.exit(0)
     try:
         print("Selected:", aips[int(choice)-1].name)
     except IndexError:
