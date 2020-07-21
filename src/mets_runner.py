@@ -141,6 +141,8 @@ def mets_runner(create_aip_mets):
     print("# Pyprint output:")
     print(job.output.strip())
     print("Status code ({}): {}".format(job.int_code, job.status_code))
+    if job.status_code != 0:
+        print("Error", job.error, file=sys.stderr)
     print("If success then METS should be partially or completely at", output_mets_file)
 
 
