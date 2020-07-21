@@ -2,17 +2,17 @@
 
 from __future__ import absolute_import, print_function
 
+import argparse
 from contextlib import contextmanager
 import os
 import sys
 import traceback
 
 import django
+from six.moves import input
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(THIS_DIR))
-
-import create_aip_mets
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.settings")
 
@@ -22,11 +22,13 @@ from main.models import SIP
 
 sys.dont_write_bytecode = True
 
+
 class Jobs(object):
     """Jobs mocks the Archivematica Jobs class. TODO: Might need some more work
     to grab extra data from the METS script. Plus we need an idiomatic way to
     output script generated log lines so we need to work on that here too.
     """
+
     def __init__(self, name, uuid, args, caller_wants_output=False):
         self.args = [name] + args
         self.int_code = 0
@@ -76,20 +78,21 @@ class Jobs(object):
             self.write_error(traceback.format_exc())
             self.set_status(1)
 
+
 class AIP:
     """AIP just provides a structured way to handle some of the data below
     without relying on the model.
     """
+
     def __init__(self):
         self.uuid = ""
         self.name = ""
 
     def __str__(self):
-        return("{}, {}".format(self.name, self.uuid))
+        return "{}, {}".format(self.name, self.uuid)
 
-from six.moves import input
 
-def mets_runner():
+def mets_runner(create_aip_mets):
     """mets_runner is our runner and will generate METS files based on the
     input provided here.
     """
@@ -108,11 +111,11 @@ def mets_runner():
         print("Keyboard interrupt detected, exiting...")
         sys.exit(0)
     try:
-        print("Selected:", aips[int(choice)-1].name)
+        print("Selected:", aips[int(choice) - 1].name)
     except IndexError:
         print("Invalid choice:", choice)
-    choice_uuid = aips[int(choice)-1].uuid
-    folder = os.path.join("aips", aips[int(choice)-1].name)
+    choice_uuid = aips[int(choice) - 1].uuid
+    folder = os.path.join("aips", aips[int(choice) - 1].name)
     output_mets_file = "mets/METS.{}.xml".format(choice_uuid)
     args_example = [
         "--amdSec",
@@ -142,7 +145,22 @@ def mets_runner():
 
 
 def main():
-    mets_runner()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--original", action="store_true")
+    parser.add_argument("--reduced", action="store_true")
+    args = parser.parse_args()
+    if len(sys.argv) == 1:
+        """original"""
+    if len(sys.argv) > 2:
+        sys.exit("One argument only please...")
+    if len(sys.argv) > 1:
+        pass
+    if args.original:
+        import create_aip_mets
+    if args.reduced:
+        import create_aip_mets_reduced as create_aip_mets
+    mets_runner(create_aip_mets)
+
 
 if __name__ == "__main__":
     main()
