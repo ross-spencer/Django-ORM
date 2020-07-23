@@ -160,7 +160,7 @@ def main():
     if args.original:
         import create_aip_mets
     if args.reduced:
-        import create_aip_mets_reduced as create_aip_mets
+        import v1_create_aip_mets as create_aip_mets
     mets_runner(create_aip_mets)
 
 
