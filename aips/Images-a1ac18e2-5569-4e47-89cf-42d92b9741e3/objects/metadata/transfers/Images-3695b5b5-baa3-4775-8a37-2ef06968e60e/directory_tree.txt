@@ -1,0 +1,14 @@
+/var/archivematica/sharedDirectory/currentlyProcessing/Images-3695b5b5-baa3-4775-8a37-2ef06968e60e/objects/
+├── 799px-Euroleague-LE Roma vs Toulouse IC-27.bmp
+├── BBhelmet.ai
+├── G31DS.TIF
+├── lion.svg
+├── Nemastylis_geminiflora_Flower.PNG
+├── oakland03.jp2
+├── pictures
+│   ├── Landing zone.jpg
+│   └── MARBLES.TGA
+├── Vector.NET-Free-Vector-Art-Pack-28-Freedom-Flight.eps
+└── WFPC01.GIF
+
+1 directory, 10 files
