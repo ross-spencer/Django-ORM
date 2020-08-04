@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from v1_create_aip_mets_reduced import create_mets
+from v1_create_tool_output import create_tool_mets
 
 import traceback
 
@@ -55,7 +56,14 @@ def call(jobs):
         with job.JobContext(logger=logging):
             try:
                 opts, _ = parser.parse_args(job.args[1:])
-                create_mets(job, opts)
+
+                # Wellcome TOOD: re-enable when we're ready...
+                # create_mets(job, opts)
+
+                # Wellcome TODO: Figure out what args need to be passed here if
+                # any really...
+                create_tool_mets(job, opts)
+
             except Exception as err:
                 job.print_error(repr(err))
                 job.print_error(traceback.format_exc())

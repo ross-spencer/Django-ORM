@@ -66,9 +66,6 @@ from create_mets_trim import getTrimFileDmdSec
 from create_mets_trim import getTrimAmdSec
 from create_mets_trim import getTrimFileAmdSec
 
-# Wellcome functions
-import v1_create_tool_output as create_tool_output
-
 # archivematicaCommon
 from archivematicaFunctions import escape
 from archivematicaFunctions import normalizeNonDcElementName
@@ -553,11 +550,6 @@ def create_premis_object(fileUUID):
         creatingApplication, ns.premisBNS + "dateCreatedByApplication"
     ).text = f.modificationtime.strftime("%Y-%m-%d")
     objectCharacteristics.append(creatingApplication)
-
-    for elem in create_tool_output.create_premis_object_characteristics_extensions(
-        fileUUID
-    ):
-        objectCharacteristics.append(elem)
 
     etree.SubElement(object_elem, ns.premisBNS + "originalName").text = escape(
         f.originallocation
