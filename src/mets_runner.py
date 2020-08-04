@@ -143,10 +143,10 @@ def mets_runner(create_aip_mets):
     print("Status code ({}): {}".format(job.int_code, job.status_code))
     if job.status_code != 0:
         print("Error", job.error, file=sys.stderr)
-    print("If success then METS should be partially or completely at", output_mets_file)
-    print("Optionally:")
+    print("If success then METS should be partially or completely at:", output_mets_file)
+    # We could have a toggle in here if we really wanted....
     tool_mets_file = "mets/tool_output-{}.xml".format(choice_uuid)
-    print("Tool output:", tool_mets_file)
+    print("                                 (Optionally) Tool output:", tool_mets_file)
 
 def main():
     parser = argparse.ArgumentParser()
