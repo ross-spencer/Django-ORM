@@ -144,7 +144,9 @@ def mets_runner(create_aip_mets):
     if job.status_code != 0:
         print("Error", job.error, file=sys.stderr)
     print("If success then METS should be partially or completely at", output_mets_file)
-
+    print("Optionally:")
+    tool_mets_file = "mets/tool_output-{}.xml".format(choice_uuid)
+    print("Tool output:", tool_mets_file)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -152,14 +154,16 @@ def main():
     parser.add_argument("--reduced", action="store_true")
     args = parser.parse_args()
     if len(sys.argv) == 1:
-        """original"""
+        args.original = True
     if len(sys.argv) > 2:
         sys.exit("One argument only please...")
     if len(sys.argv) > 1:
         pass
     if args.original:
+        print("Running against the original METS creation script...")
         import create_aip_mets
     if args.reduced:
+        print("Running against the reduced METS creation script...")
         import v1_create_aip_mets as create_aip_mets
     mets_runner(create_aip_mets)
 
