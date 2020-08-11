@@ -85,14 +85,16 @@ def create_tool_mets(job, opts):
         logger.info("No record in database for transfer: %s", aip_uuid)
         raise
 
-    fsentry_tree = FSEntriesTree(objects_directory_path, "%SIPDirectory%", aip)
+    fsentry_tree = FSEntriesTree(
+        objects_directory_path, base_directory_path_string, aip, structure_only=False
+    )
     fsentry_tree.scan()
 
     mets.append_file(fsentry_tree.root_node)
 
     # WELLCOME TODO: This is very much a hack until we can solve:
     # https://github.com/archivematica/Issues/issues/1272
-    if not create_normative_structmap:
+    if create_normative_structmap:
         mets = remove_logical_structmap(mets)
 
     mets = etree.ElementTree(mets)

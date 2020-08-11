@@ -9,21 +9,14 @@ import logging
 from lxml import etree
 import os
 import scandir
-import uuid
 
 from django.db.models import Prefetch
 
 import metsrw
 
-from main.models import (
-    Derivation,
-    Directory,
-    File,
-    FPCommandOutput,
-)
+from main.models import Derivation, Directory, File, FPCommandOutput
 
 from archivematicaFunctions import escape
-from countryCodes import getCodeForCountry
 
 
 PREMIS_META = metsrw.plugins.premisrw.PREMIS_3_0_META
@@ -33,10 +26,9 @@ IE_PREMIS_META = PREMIS_META.copy()
 IE_PREMIS_META["xsi:type"] = "premis:intellectualEntity"
 
 
-
-FORMAT = '%(asctime)-15s %(message)s'
+FORMAT = "%(asctime)-15s %(message)s"
 logging.basicConfig(format=FORMAT)
-logger = logging.getLogger('fs_entries_tree')
+logger = logging.getLogger("fs_entries_tree")
 
 
 class FSEntriesTree(object):
@@ -76,7 +68,14 @@ class FSEntriesTree(object):
         "currentlocation"
     )
 
-    def __init__(self, root_path, db_base_path, transfer):
+    def __init__(self, root_path, db_base_path, transfer, structure_only=False):
+        """FSEntriesTree Constructor
+
+        :param string root_path: The path to find out files at.
+        :param string db_base_path: Template string, e.g. %SIPDirectory%
+        :param transfer ORM object: Transfer or SIP entries from db.
+        :param structure_only bool: Elect for just a fileSec and StructMap.
+        """
         self.root_path = root_path
         self.db_base_path = db_base_path
         self.transfer = transfer
@@ -88,6 +87,7 @@ class FSEntriesTree(object):
         )
         self.file_index = {}
         self.dir_index = {}
+        self.structure_only = structure_only
 
     def scan(self):
         self.build_tree(self.root_path, parent=self.root_node)
@@ -97,7 +97,6 @@ class FSEntriesTree(object):
 
     def get_relative_path(self, path):
         return os.path.relpath(path, start=self.root_path)
-
 
     def build_tree(self, path, parent=None):
         dir_entries = sorted(scandir.scandir(path), key=lambda d: d.name)
@@ -150,8 +149,9 @@ class FSEntriesTree(object):
             fsentry.checksumtype = convert_to_premis_hash_function(
                 file_obj.checksumtype
             )
-            premis_object = file_obj_to_premis(file_obj)
-            fsentry.add_premis_object(premis_object)
+            if not self.structure_only:
+                premis_object = file_obj_to_premis(file_obj)
+                fsentry.add_premis_object(premis_object)
 
     def load_dir_uuids_from_db(self):
         dir_objs = Directory.objects.prefetch_related("identifiers").filter(
@@ -167,8 +167,9 @@ class FSEntriesTree(object):
                     dir_obj.currentlocation,
                 )
             else:
-                premis_intellectual_entity = dir_obj_to_premis(dir_obj)
-                fsentry.add_premis_object(premis_intellectual_entity)
+                if not self.structure_only:
+                    premis_intellectual_entity = dir_obj_to_premis(dir_obj)
+                    fsentry.add_premis_object(premis_intellectual_entity)
 
     def check_for_missing_file_uuids(self):
         missing = []
@@ -186,6 +187,7 @@ class FSEntriesTree(object):
 
 # TODO: FSEntryTree Helper functions... (Let's move these out of here...)
 
+
 def convert_to_premis_hash_function(hash_type):
     """
     Returns a PREMIS valid hash function name, if possible.
@@ -196,6 +198,7 @@ def convert_to_premis_hash_function(hash_type):
         return "MD5"
 
     return hash_type
+
 
 def file_obj_to_premis(file_obj):
     """
@@ -239,6 +242,7 @@ def file_obj_to_premis(file_obj):
         premis_data, premis_version=FILE_PREMIS_META["version"]
     )
 
+
 def get_premis_format_data(file_ids):
     format_data = ()
 
@@ -257,6 +261,7 @@ def get_premis_format_data(file_ids):
 
     return format_data
 
+
 def get_premis_object_identifiers(uuid, additional_identifiers):
     object_identifiers = (
         (
@@ -266,6 +271,7 @@ def get_premis_object_identifiers(uuid, additional_identifiers):
         ),
     )
     return object_identifiers
+
 
 def get_premis_object_characteristics_extension(documents):
     extensions = ()
@@ -281,12 +287,14 @@ def get_premis_object_characteristics_extension(documents):
 
     return extensions
 
+
 def clean_date(date_string):
     if date_string is None:
         return ""
 
     # Legacy dates may be slash seperated
     return date_string.replace("/", "-")
+
 
 def dir_obj_to_premis(dir_obj):
     """
