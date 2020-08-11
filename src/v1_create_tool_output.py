@@ -8,7 +8,6 @@ from main.models import (
     File,
     # MCP table, e.g. select * from main_fpcommandoutput.
     FPCommandOutput,
-
     SIP,
 )
 
@@ -364,24 +363,52 @@ def create_original_style_structmap(job, opts):
 # End of BAD METS...
 # =============================================================================
 
+
+def remove_logical_structmap(mets):
+    """Remove the logical structmap
+
+    Remove logical structmap is output by default from mets-reader-
+    writer, but it isn't a default argument in Archivematica.
+    """
+    mets_root = mets.serialize()
+    struct_map = mets_root.find(
+        ".//mets:structMap[@TYPE='logical']", namespaces=ns.NSMAP
+    )
+    mets_root.remove(struct_map)
+    return mets_root
+
+
 import uuid
 
 import metsrw
 
 from fs_entries_tree import FSEntriesTree
 
+
 def create_tool_mets(job, opts):
-    """hello"""
+    """Create tool mets
+
+    Outputs a structmap, fileSec, and PREMIS objects containing largely
+    just the PREMIS object characteristics extension which holds the
+    tool output for objects from Archivematica's processing via the FPR.
+    """
 
     # Based entirely on create_transfer_METS from Cole...
     # https://git.io/JJK8a
 
+    METS_DIR = "mets"
+    tool_output_filename = "tool_output-{}.xml"
+
+    # WELLCOME TODO: We can convert these variables to camel_case which
+    # would be a start towards refactoring this legacy piece.
     baseDirectoryPath = opts.baseDirectoryPath
     baseDirectoryPathString = "%%%s%%" % (opts.baseDirectoryPathString)
     aip_uuid = opts.fileGroupIdentifier
     fileGroupType = opts.fileGroupType
     includeAmdSec = opts.amdSec
-    mets_tool_path = "mets/tool_output-{}.xml".format(aip_uuid)
+    createNormativeStructmap = opts.createNormativeStructmap
+
+    mets_tool_path = os.path.join(METS_DIR, tool_output_filename.format(aip_uuid))
 
     # Wellcome TODO: this is way too finicky...
     baseDirectoryPath = os.path.join(baseDirectoryPath, "")
@@ -402,11 +429,18 @@ def create_tool_mets(job, opts):
     fsentry_tree.scan()
 
     mets.append_file(fsentry_tree.root_node)
-    mets.write(mets_tool_path, pretty_print=True)
 
+    # WELLCOME TODO: This is very much a hack until we can solve:
+    # https://github.com/archivematica/Issues/issues/1272
+    if not createNormativeStructmap:
+        mets = remove_logical_structmap(mets)
 
+    mets = etree.ElementTree(mets)
+    mets.write(
+        mets_tool_path, pretty_print=True, xml_declaration=True, encoding="UTF-8"
+    )
 
-    '''
+    """
     transfer_dir_path = os.path.expanduser(transfer_dir_path)
     transfer_dir_path = os.path.normpath(transfer_dir_path)
     db_base_path = r"%{}%".format(base_path_placeholder)
@@ -433,10 +467,7 @@ def create_tool_mets(job, opts):
     fsentry_tree.scan()
     mets.append_file(fsentry_tree.root_node)
     mets.write(mets_path, pretty_print=True)
-    '''
-
-
-
+    """
 
 
 def _create_tool_mets(job, opts):
