@@ -68,7 +68,7 @@ class FSEntriesTree(object):
         "currentlocation"
     )
 
-    def __init__(self, root_path, db_base_path, transfer, structure_only=False):
+    def __init__(self, root_path, db_base_path, transfer):
         """FSEntriesTree Constructor
 
         :param string root_path: The path to find out files at.
@@ -87,7 +87,6 @@ class FSEntriesTree(object):
         )
         self.file_index = {}
         self.dir_index = {}
-        self.structure_only = structure_only
 
     def scan(self):
         self.build_tree(self.root_path, parent=self.root_node)
@@ -149,9 +148,8 @@ class FSEntriesTree(object):
             fsentry.checksumtype = convert_to_premis_hash_function(
                 file_obj.checksumtype
             )
-            if not self.structure_only:
-                premis_object = file_obj_to_premis(file_obj)
-                fsentry.add_premis_object(premis_object)
+            premis_object = file_obj_to_premis(file_obj)
+            fsentry.add_premis_object(premis_object)
 
     def load_dir_uuids_from_db(self):
         dir_objs = Directory.objects.prefetch_related("identifiers").filter(
@@ -167,9 +165,8 @@ class FSEntriesTree(object):
                     dir_obj.currentlocation,
                 )
             else:
-                if not self.structure_only:
-                    premis_intellectual_entity = dir_obj_to_premis(dir_obj)
-                    fsentry.add_premis_object(premis_intellectual_entity)
+                premis_intellectual_entity = dir_obj_to_premis(dir_obj)
+                fsentry.add_premis_object(premis_intellectual_entity)
 
     def check_for_missing_file_uuids(self):
         missing = []

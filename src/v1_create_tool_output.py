@@ -86,7 +86,7 @@ def create_tool_mets(job, opts):
         raise
 
     fsentry_tree = FSEntriesTree(
-        objects_directory_path, base_directory_path_string, aip, structure_only=False
+        objects_directory_path, base_directory_path_string, aip
     )
     fsentry_tree.scan()
 
@@ -99,7 +99,7 @@ def create_tool_mets(job, opts):
     #
     is_valid, _ = metsrw.xsd_validate(mets.serialize())
     if not is_valid:
-        raise ValueError(validates)
+        raise ValueError("METS doesn't validate")
 
     # WELLCOME TODO: This is very much a hack until we can solve:
     # https://github.com/archivematica/Issues/issues/1272
