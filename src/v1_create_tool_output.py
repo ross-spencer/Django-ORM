@@ -92,12 +92,22 @@ def create_tool_mets(job, opts):
 
     mets.append_file(fsentry_tree.root_node)
 
+    # WELLCOME TODO; We might attempt to perform validation differently
+    # i.e. via a microservice:
+    #
+    # https://github.com/artefactual/archivematica/pull/1590
+    #
+    is_valid, _ = metsrw.xsd_validate(mets.serialize())
+    if not is_valid:
+        raise ValueError(validates)
+
     # WELLCOME TODO: This is very much a hack until we can solve:
     # https://github.com/archivematica/Issues/issues/1272
     if create_normative_structmap:
         mets = remove_logical_structmap(mets)
-
-    mets = etree.ElementTree(mets)
-    mets.write(
-        mets_tool_path, pretty_print=True, xml_declaration=True, encoding="UTF-8"
-    )
+        mets = etree.ElementTree(mets)
+        mets.write(
+            mets_tool_path, pretty_print=True, xml_declaration=True, encoding="UTF-8"
+        )
+    else:
+        mets.write(mets_tool_path, pretty_print=True)
