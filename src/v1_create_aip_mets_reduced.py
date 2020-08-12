@@ -55,6 +55,8 @@ from main.models import (
     FileID,
     SIP,
     SIPArrange,
+    # FPR models.
+    FPCommandOutput,
 )
 
 import create_mets_reingest
@@ -550,7 +552,6 @@ def create_premis_object(fileUUID):
         creatingApplication, ns.premisBNS + "dateCreatedByApplication"
     ).text = f.modificationtime.strftime("%Y-%m-%d")
     objectCharacteristics.append(creatingApplication)
-
     etree.SubElement(object_elem, ns.premisBNS + "originalName").text = escape(
         f.originallocation
     )
@@ -689,6 +690,10 @@ def createDigiprovMD(fileUUID, state):
         xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
         xmlData.append(createEvent(event_record))
 
+    metadata_events = create_metadata_event(file_uuid=fileUUID)
+    for metadata_event in metadata_events:
+        xmlData.append(metadata_event)
+
     agents = Agent.objects.filter(event__file_uuid_id=fileUUID).distinct()
     for agent in agents:
         state.globalDigiprovMDCounter += 1
@@ -764,6 +769,115 @@ def createEvent(event_record):
             linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierValue"
         ).text = agent.identifiervalue
     return event
+
+
+# WELLCOME TODO: This function needs to be refactored it's a quick and
+# dirty ctrl-v function for demonstration purposes.
+#
+# METSRW related: https://github.com/artefactual-labs/mets-reader-writer/issues/43
+#
+# Characterization commands do not have events associated with them in
+# Archivematica yet, what happens if we create them? Is that
+# information usable to us in any way here?
+#
+def create_metadata_event(file_uuid):
+    """Create metadata event
+
+    This is a temporary function that does need a refactor.
+    """
+
+    # WELLCOME TODO: Is this the right logic, we need a new event per
+    # tool?
+    #
+    # +14 lines per file where this is done.
+    #
+    objs = create_premis_object_characteristics_extensions(file_uuid)
+    events = []
+    if not objs:
+        return events
+    for obj in objs:
+        event = etree.Element(ns.premisBNS + "event", nsmap={"premis": ns.premisNS})
+        event.set(
+            ns.xsiBNS + "schemaLocation",
+            ns.premisNS + " http://www.loc.gov/standards/premis/v3/premis.xsd",
+        )
+        event.set("version", "3.0")
+
+        eventIdentifier = etree.SubElement(event, ns.premisBNS + "eventIdentifier")
+        etree.SubElement(
+            eventIdentifier, ns.premisBNS + "eventIdentifierType"
+        ).text = "UUID"
+        etree.SubElement(
+            eventIdentifier, ns.premisBNS + "eventIdentifierValue"
+        ).text = str(uuid4())
+
+        # WELLCOME TODO: Grab the time that the tool output was made by
+        # Archivematica if we have it.
+        etree.SubElement(
+            event, ns.premisBNS + "eventType"
+        ).text = "INTRODUCING: metadata extraction"
+        etree.SubElement(
+            event, ns.premisBNS + "eventDateTime"
+        ).text = "TODO: Grab the date from the tool output log if there is one, else we need one!"
+
+        eventDetailInformation = etree.SubElement(
+            event, ns.premisBNS + "eventDetailInformation"
+        )
+        etree.SubElement(
+            eventDetailInformation, ns.premisBNS + "eventDetail"
+        ).text = "INFO: We don't output an event detail here..."
+
+        eventOutcomeInformation = etree.SubElement(
+            event, ns.premisBNS + "eventOutcomeInformation"
+        )
+
+        # WELLCOME TODO: When we re-write the events functions here I
+        # noticed that per sé isn't valid on output... we can probably do
+        # better.
+        etree.SubElement(
+            eventOutcomeInformation, ns.premisBNS + "eventOutcome"
+        ).text = "INFO: We don't have an event outcome per se either."
+
+        eventOutcomeDetail = etree.SubElement(
+            eventOutcomeInformation, ns.premisBNS + "eventOutcomeDetail"
+        )
+
+        # WELLCOME TODO: THIS IS WHERE THE LINK NEEDS TO GO TO THE TECH
+        # MD IN THE TOOL OUTPUT...
+        #
+        #  <premis:eventOutcomeDetailNote>
+        #      "generated objects/metadata/tool_output-1415ff13-a27b-48b8-8cb5-3cb627bdb1a1.xml#xpointer(id('techMD_3').xml"
+        #  </premis:eventOutcomeDetailNote>
+        #
+        etree.SubElement(
+            eventOutcomeDetail, ns.premisBNS + "eventOutcomeDetailNote"
+        ).text = "TODO: We need to find the techMD relating to this event here, e.g. .//metadata/tool_output-{UUID}.xml#xpointer(id('techMD_1').xml"
+
+        # WELLCOME TODO: We don't generate this in Archivematica either yet.
+        for agent_no in range(3):
+            linkingAgentIdentifier = etree.SubElement(
+                event, ns.premisBNS + "linkingAgentIdentifier"
+            )
+            etree.SubElement(
+                linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierType"
+            ).text = "TODO: Agent: {}".format(agent_no)
+            etree.SubElement(
+                linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierValue"
+            ).text = "TODO: Agent identifier: {}".format(agent_no)
+
+        events.append(event)
+    return events
+
+
+def create_premis_object_characteristics_extensions(fileUUID):
+    """Create PREMIS object characteristics extension
+
+    Return true if we need to generate tool output, false if not.
+    """
+    return FPCommandOutput.objects.filter(
+        file_id=fileUUID,
+        rule__purpose__in=["characterization", "default_characterization"],
+    ).values_list("content")
 
 
 def createAgent(agent_record):
@@ -1746,6 +1860,7 @@ def create_mets(job, opts):
 
     root.append(fileSec)
     root.append(structMap)
+
     if normativeStructMap is not None:
         root.append(normativeStructMap)
 
