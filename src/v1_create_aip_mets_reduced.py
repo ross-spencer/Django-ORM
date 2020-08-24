@@ -78,6 +78,11 @@ from create_mets_dataverse_v2 import (
     create_dataverse_tabfile_dmdsec,
 )
 
+# WELLCOME TODO: Reduced METS specific imports.
+import metsrw
+import uuid
+from fs_entries_tree import dir_obj_to_premis, IE_PREMIS_META, FSEntriesTree
+
 # from custom_handlers import get_script_logger
 import logging
 
@@ -242,7 +247,93 @@ def _add_identifier(object_elem, identifier, bns=ns.premisBNS):
     return object_elem
 
 
-def getDirDmdSec(dir_mdl, relativeDirectoryPath):
+def _generate_mets_sec_with_premis():
+    """We should be able to fill this out to be generic across a DMDSEC
+    and AMDSEC.
+    """
+
+
+def _generate_structural_relationship(sub_type, rel_uuid):
+    """Generate a structural relationship to write out to a PREMIS
+    object.
+    """
+    return (
+        (
+            "relationship",
+            ("relationship_type", "structural"),
+            ("relationship_sub_type", sub_type),
+            (
+                "related_object_identification",
+                ("related_object_identifier_type", "UUID"),
+                ("related_object_identifier_value", rel_uuid),
+            ),
+        ),
+    )
+
+
+def _generate_repr_premis(dir_obj, representation_id):
+    """Do something..."""
+
+    object_identifiers = (
+        (
+            "object_identifier",
+            ("object_identifier_type", "UUID"),
+            ("object_identifier_value", representation_id),
+        ),
+    )
+
+    relationship_to_ie = _generate_structural_relationship("represents", dir_obj.uuid)
+
+    premis_data = ("object", IE_PREMIS_META) + object_identifiers + relationship_to_ie
+
+    return metsrw.plugins.premisrw.data_to_premis(
+        premis_data, premis_version=IE_PREMIS_META["version"]
+    )
+
+
+def create_aip_representation(dir_obj, relative_dir_path, representation_id):
+    """Do something..."""
+
+    DMDSEC = "amdSec"
+
+    MDTYPE = "MDTYPE"
+    PREMISOBJECT = "PREMIS:OBJECT"
+    MDWRAP = "mdWrap"
+    XMLDATA = "xmlData"
+
+    amd_sec = etree.Element("{}{}".format(ns.metsBNS, DMDSEC))
+    md_wrap = etree.SubElement(amd_sec, "{}{}".format(ns.metsBNS, MDWRAP))
+    md_wrap.set(MDTYPE, PREMISOBJECT)
+    xml_data = etree.SubElement(md_wrap, "{}{}".format(ns.metsBNS, XMLDATA))
+
+    relationship_premis = _generate_repr_premis(dir_obj, representation_id)
+    xml_data.append(relationship_premis)
+
+    return amd_sec
+
+
+def create_aip_ie(dir_obj, relative_dir_path):
+    """Create an AIP level IE and Representation"""
+
+    DMDSEC = "dmdSec"
+
+    MDTYPE = "MDTYPE"
+    PREMISOBJECT = "PREMIS:OBJECT"
+    MDWRAP = "mdWrap"
+    XMLDATA = "xmlData"
+
+    dmd_sec = etree.Element("{}{}".format(ns.metsBNS, DMDSEC))
+    md_wrap = etree.SubElement(dmd_sec, "{}{}".format(ns.metsBNS, MDWRAP))
+    md_wrap.set(MDTYPE, PREMISOBJECT)
+    xml_data = etree.SubElement(md_wrap, "{}{}".format(ns.metsBNS, XMLDATA))
+
+    intellectual_entity = dir_obj_to_premis(dir_obj, relative_dir_path)
+    xml_data.append(intellectual_entity)
+
+    return dmd_sec
+
+
+def getDirDmdSec(dir_mdl, relativeDirectoryPath, representation_id):
     """Return an lxml ``Element`` representing a <mets:dmdSec> for a directory.
     It describes the directory as a PREMIS:OBJECT of type
     premis:intellectualEntity and lists the directory's original name (i.e.,
@@ -255,6 +346,8 @@ def getDirDmdSec(dir_mdl, relativeDirectoryPath):
     mdWrap = etree.SubElement(ret, ns.metsBNS + "mdWrap")
     mdWrap.set("MDTYPE", "PREMIS:OBJECT")
     xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
+
+    # WELLCOME TODO: This needs replacing...
     object_elem = etree.SubElement(
         xmlData, ns.premisBNS + "object", nsmap={"premis": ns.premisNS}
     )
@@ -273,6 +366,15 @@ def getDirDmdSec(dir_mdl, relativeDirectoryPath):
     except AttributeError:  # SIP model won't have originallocation
         original_name = escape(relativeDirectoryPath)
     etree.SubElement(object_elem, ns.premisBNS + "originalName").text = original_name
+
+    # WELLCOME TODO: We need a relationship to a representation here?
+    # ADD RELATIONSHIP 1
+
+    # WELLCOME TODO: Let's leave this out until we get a better idea
+    # from EM.
+
+    # Example here: %transferDirectory%objects/artwork/ ...
+
     return ret
 
 
@@ -483,7 +585,7 @@ def createDSpaceDMDSec(job, label, dspace_mets_path, directoryPathSTR, state):
     return dmdsecs
 
 
-def createTechMD(fileUUID, state):
+def createTechMD(fileUUID, state, representation_id):
     """
     Create a techMD containing a PREMIS:OBJECT for the file with fileUUID.
 
@@ -500,12 +602,13 @@ def createTechMD(fileUUID, state):
     mdWrap.set("MDTYPE", "PREMIS:OBJECT")
     xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
 
-    premis_object = create_premis_object(fileUUID)
+    premis_object = create_premis_object(fileUUID, representation_id)
     xmlData.append(premis_object)
     return ret
 
 
-def create_premis_object(fileUUID):
+# WELLCOME TODO: Rewrite to use metsrw tuple syntax.
+def create_premis_object(fileUUID, representation_id):
     """
     Create a PREMIS:OBJECT for fileUUID.
 
@@ -556,8 +659,16 @@ def create_premis_object(fileUUID):
         f.originallocation
     )
 
-    for elem in create_premis_object_derivations(fileUUID):
-        object_elem.append(elem)
+    # WELLCOME TODO: We need a relationship to a representation here?
+    # ADD RELATIONSHIP 2
+
+    elems = create_premis_object_derivations(fileUUID, representation_id)
+    if elems:
+        for elem in elems:
+            object_elem.append(elem)
+    else:
+        object_to_repr_rel = create_repr_relationship(representation_id)
+        object_elem.append(object_to_repr_rel)
 
     return object_elem
 
@@ -595,7 +706,36 @@ def create_premis_object_formats(fileUUID):
     return elements
 
 
-def create_premis_object_derivations(fileUUID):
+# WELLCOME TODO: Rewrite to use metsrw tuple syntax.
+def create_repr_relationship(representation_id):
+    """Create an element for a representation relationship"""
+    relationship = etree.Element(ns.premisBNS + "relationship")
+    etree.SubElement(
+        relationship, ns.premisBNS + "relationshipType"
+    ).text = "structural"
+    etree.SubElement(
+        relationship, ns.premisBNS + "relationshipSubType"
+    ).text = "included in"
+
+    relatedObjectIdentifier = etree.SubElement(
+        relationship, ns.premisBNS + "relatedObjectIdentifier"
+    )
+    etree.SubElement(
+        relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierType"
+    ).text = "UUID"
+    etree.SubElement(
+        relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierValue"
+    ).text = representation_id
+    return relationship
+
+
+# WELLCOME TODO: Rewrite to use metsrw tuple syntax.
+#
+# ADDITIONAL: This function could do with a rewrite to remove its
+# duplication anyway... Also, in practice, I'm not sure we ever need
+# to loop through relationships. The relationships in an AIP are
+# more simple.
+def create_premis_object_derivations(fileUUID, representation_id):
     elements = []
     # Derivations
     derivations = Derivation.objects.filter(
@@ -628,7 +768,25 @@ def create_premis_object_derivations(fileUUID):
         ).text = "UUID"
         etree.SubElement(
             relatedEventIdentifier, ns.premisBNS + "relatedEventIdentifierValue"
-        ).text = derivation.event_id
+        ).text = str(derivation.event_id)
+
+        # WELLCOME TODO: More unnecessary duplication.
+        etree.SubElement(
+            relationship, ns.premisBNS + "relationshipType"
+        ).text = "structural"
+        etree.SubElement(
+            relationship, ns.premisBNS + "relationshipSubType"
+        ).text = "included in"
+
+        relatedObjectIdentifier = etree.SubElement(
+            relationship, ns.premisBNS + "relatedObjectIdentifier"
+        )
+        etree.SubElement(
+            relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierType"
+        ).text = "UUID"
+        etree.SubElement(
+            relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierValue"
+        ).text = representation_id
 
         elements.append(relationship)
 
@@ -662,7 +820,25 @@ def create_premis_object_derivations(fileUUID):
         ).text = "UUID"
         etree.SubElement(
             relatedEventIdentifier, ns.premisBNS + "relatedEventIdentifierValue"
-        ).text = derivation.event_id
+        ).text = str(derivation.event_id)
+
+        # WELLCOME TODO: More unnecessary duplication.
+        etree.SubElement(
+            relationship, ns.premisBNS + "relationshipType"
+        ).text = "structural"
+        etree.SubElement(
+            relationship, ns.premisBNS + "relationshipSubType"
+        ).text = "included in"
+
+        relatedObjectIdentifier = etree.SubElement(
+            relationship, ns.premisBNS + "relatedObjectIdentifier"
+        )
+        etree.SubElement(
+            relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierType"
+        ).text = "UUID"
+        etree.SubElement(
+            relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierValue"
+        ).text = representation_id
 
         elements.append(relationship)
 
@@ -912,6 +1088,7 @@ def getAMDSec(
     typeOfTransfer,
     baseDirectoryPath,
     state,
+    representation_id=None,
 ):
     """
     Creates an amdSec.
@@ -935,7 +1112,7 @@ def getAMDSec(
     ret = (AMD, AMDID)
 
     # tech MD
-    AMD.append(createTechMD(fileUUID, state))
+    AMD.append(createTechMD(fileUUID, state, representation_id))
 
     if use == "original":
         metadataAppliesToList = [
@@ -1067,6 +1244,7 @@ def createFileSec(
     directories,
     state,
     includeAmdSec=True,
+    representation_id=None,
 ):
 
     """Creates fileSec and structMap entries for files on disk recursively.
@@ -1101,7 +1279,7 @@ def createFileSec(
     )
     dir_dmd_id = None
     if dir_mdl:
-        dirDmdSec = getDirDmdSec(dir_mdl, relativeDirectoryPath)
+        dirDmdSec = getDirDmdSec(dir_mdl, relativeDirectoryPath, representation_id)
         state.globalDmdSecCounter += 1
         state.dmdSecs.append(dirDmdSec)
         dir_dmd_id = "dmdSec_" + state.globalDmdSecCounter.__str__()
@@ -1136,6 +1314,7 @@ def createFileSec(
                 directories,
                 state,
                 includeAmdSec=includeAmdSec,
+                representation_id=representation_id,
             )
 
         elif os.path.isfile(itemdirectoryPath):
@@ -1382,6 +1561,7 @@ def createFileSec(
                         typeOfTransfer,
                         baseDirectoryPath,
                         state,
+                        representation_id,
                     )
                     state.amdSecs.append(AMD)
                     file_elem.set("ADMID", ADMID)
@@ -1632,7 +1812,7 @@ def get_normative_structmap(
 
 
 def add_normative_structmap_div(
-    all_fsitems, root_el, directories, state, path_to_el=None
+    all_fsitems, root_el, directories, state, path_to_el=None, representation_id=None
 ):
     """Document all of the file/dir paths in ``all_fsitems`` in the
     lxml._Element instance ``root_el``. This constructs the <mets:div> element
@@ -1678,7 +1858,7 @@ def add_normative_structmap_div(
                 fsitem_path,
                 directories.get(fsitem_path.rstrip("/"), FakeDirMdl(uuid=str(uuid4()))),
             )
-            dirDmdSec = getDirDmdSec(dir_mdl, fsitem_path)
+            dirDmdSec = getDirDmdSec(dir_mdl, fsitem_path, representation_id)
             state.globalDmdSecCounter += 1
             state.dmdSecs.append(dirDmdSec)
             dir_dmd_id = "dmdSec_" + str(state.globalDmdSecCounter)
@@ -1705,6 +1885,12 @@ def create_mets(job, opts):
     includeAmdSec = opts.amdSec
     createNormativeStructmap = opts.createNormativeStructmap
     keepNormativeStructmap = createNormativeStructmap
+
+    # WELLCOME TODO: Do we want this UUID to come from anywhere else?
+    # It's somewhat arbitrary when it is just a new UUID but maybe
+    # that's okay. Do we need it to persist in the dashboard database
+    # at all?
+    representation_id = str(uuid.uuid4())
 
     # If reingesting, do not create a new METS, just modify existing one
     if "REIN" in SIP_TYPE:
@@ -1773,12 +1959,24 @@ def create_mets(job, opts):
     # <mets:div> in the physical structMap.
     sip_mdl = SIP.objects.filter(uuid=fileGroupIdentifier).first()
     if sip_mdl:
-        aipDmdSec = getDirDmdSec(sip_mdl, sip_dir_name)
+
+        aip_dmd_sec = create_aip_ie(sip_mdl, sip_dir_name)
         state.globalDmdSecCounter += 1
-        state.dmdSecs.append(aipDmdSec)
+        state.dmdSecs.append(aip_dmd_sec)
+
         aip_dmd_id = "dmdSec_" + str(state.globalDmdSecCounter)
-        aipDmdSec.set("ID", aip_dmd_id)
+        aip_dmd_sec.set("ID", aip_dmd_id)
+
         structMapDiv.set("DMDID", aip_dmd_id)
+
+        aip_amd_sec = create_aip_representation(
+            sip_mdl, sip_dir_name, representation_id
+        )
+        state.globalAmdSecCounter += 1
+        state.dmdSecs.append(aip_amd_sec)
+
+        aip_amd_id = "amdSec_" + str(state.globalAmdSecCounter)
+        aip_amd_sec.set("ID", aip_amd_id)
 
     # WELLCOME TODO: WILL WE BE ABLE TO REMOVE THIS?
     structMapDivObjects = createFileSec(
@@ -1792,6 +1990,7 @@ def create_mets(job, opts):
         directories,
         state,
         includeAmdSec=includeAmdSec,
+        representation_id=representation_id,
     )
 
     el = create_object_metadata(job, structMapDivObjects, baseDirectoryPath, state)
@@ -1909,9 +2108,6 @@ def create_mets(job, opts):
 # METS STRUCTURE CODE BELOW
 # ----------------------------------------------------------------------
 
-import metsrw
-from fs_entries_tree import FSEntriesTree
-
 
 def retrieve_file_sec(mets):
     """Retrieve file sec"""
@@ -1944,7 +2140,6 @@ def create_mets_structure(job, opts):
     Outputs a structmap, fileSec, and PREMIS objects containing largely
     just the PREMIS object characteristics extension which holds the
     tool output for objects from Archivematica's processing via the FPR.
-
 
     WELLCOME TODO:
 
