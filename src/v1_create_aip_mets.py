@@ -57,12 +57,12 @@ def call(jobs):
             try:
                 opts, _ = parser.parse_args(job.args[1:])
 
-                # Wellcome TOOD: re-enable when we're ready...
-                # create_mets(job, opts)
-
                 # Wellcome TODO: Figure out what args need to be passed here if
                 # any really...
-                create_tool_mets(job, opts)
+                tech_mds = create_tool_mets(job, opts)
+
+                # Wellcome TOOD: re-enable when we're ready...
+                create_mets(job, opts, tech_mds)
 
             except Exception as err:
                 job.print_error(repr(err))

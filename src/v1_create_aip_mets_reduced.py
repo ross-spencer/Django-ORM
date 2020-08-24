@@ -845,7 +845,7 @@ def create_premis_object_derivations(fileUUID, representation_id):
     return elements
 
 
-def createDigiprovMD(fileUUID, state):
+def createDigiprovMD(fileUUID, sip_uuid, state, tool_tech_mds=None):
     """
     Create digiprovMD for PREMIS Events and linking Agents.
     """
@@ -866,7 +866,9 @@ def createDigiprovMD(fileUUID, state):
         xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
         xmlData.append(createEvent(event_record))
 
-    metadata_events = create_metadata_event(file_uuid=fileUUID)
+    metadata_events = create_metadata_event(
+        file_uuid=fileUUID, sip_uuid=sip_uuid, tool_tech_mds=tool_tech_mds
+    )
     for metadata_event in metadata_events:
         xmlData.append(metadata_event)
 
@@ -956,7 +958,7 @@ def createEvent(event_record):
 # Archivematica yet, what happens if we create them? Is that
 # information usable to us in any way here?
 #
-def create_metadata_event(file_uuid):
+def create_metadata_event(file_uuid, sip_uuid, tool_tech_mds):
     """Create metadata event
 
     This is a temporary function that does need a refactor.
@@ -971,7 +973,12 @@ def create_metadata_event(file_uuid):
     events = []
     if not objs:
         return events
-    for obj in objs:
+    # WELLCOME TODO: We might want a separate extract event per tool?
+    # 1. It's currently being output in a single tech_md in the tool
+    #    mets.
+    # 2. That logic might be the same a as the transfer METS as well and
+    #    so let's check that.
+    for obj in objs[0]:
         event = etree.Element(ns.premisBNS + "event", nsmap={"premis": ns.premisNS})
         event.set(
             ns.xsiBNS + "schemaLocation",
@@ -987,59 +994,80 @@ def create_metadata_event(file_uuid):
             eventIdentifier, ns.premisBNS + "eventIdentifierValue"
         ).text = str(uuid4())
 
-        # WELLCOME TODO: Grab the time that the tool output was made by
-        # Archivematica if we have it.
-        etree.SubElement(
-            event, ns.premisBNS + "eventType"
-        ).text = "INTRODUCING: metadata extraction"
+        etree.SubElement(event, ns.premisBNS + "eventType").text = "metadata extraction"
+
+        # WELLCOME TODO: We haven't a datetime associated with an event.
+        #
+        # mysql> describe main_fpcommandoutput;
+        # +----------+-------------+------+-----+---------+----------------+
+        # | Field    | Type        | Null | Key | Default | Extra          |
+        # +----------+-------------+------+-----+---------+----------------+
+        # | id       | int(11)     | NO   | PRI | NULL    | auto_increment |
+        # | content  | longtext    | YES  |     | NULL    |                |
+        # | fileUUID | varchar(36) | NO   | MUL | NULL    |                |
+        # | ruleUUID | varchar(36) | NO   | MUL | NULL    |                |
+        # +----------+-------------+------+-----+---------+----------------+
+        # 4 rows in set (0.00 sec)
+        #
+        # We might need to use the FPR to properly associate an event
+        # with a metadata extract command.
+        #
+        # Metadata extract commands are "characterization" in the FPR.
+        #
         etree.SubElement(
             event, ns.premisBNS + "eventDateTime"
-        ).text = "TODO: Grab the date from the tool output log if there is one, else we need one!"
+        ).text = "1970-01-16T21:36:32.470035+00:00"
 
         eventDetailInformation = etree.SubElement(
             event, ns.premisBNS + "eventDetailInformation"
         )
-        etree.SubElement(
-            eventDetailInformation, ns.premisBNS + "eventDetail"
-        ).text = "INFO: We don't output an event detail here..."
+
+        # WELLCOME TODO: Event outcome information isn't output.
+        etree.SubElement(eventDetailInformation, ns.premisBNS + "eventDetail").text = ""
 
         eventOutcomeInformation = etree.SubElement(
             event, ns.premisBNS + "eventOutcomeInformation"
         )
 
         # WELLCOME TODO: When we re-write the events functions here I
-        # noticed that per sé isn't valid on output... we can probably do
-        # better.
+        # noticed that per sé (with accent) isn't valid on output... we
+        # can probably do better with Unicode. METSRW might help.
+        #
+        # An event outcome isn't output.
+        #
         etree.SubElement(
             eventOutcomeInformation, ns.premisBNS + "eventOutcome"
-        ).text = "INFO: We don't have an event outcome per se either."
+        ).text = ""
 
         eventOutcomeDetail = etree.SubElement(
             eventOutcomeInformation, ns.premisBNS + "eventOutcomeDetail"
         )
 
-        # WELLCOME TODO: THIS IS WHERE THE LINK NEEDS TO GO TO THE TECH
-        # MD IN THE TOOL OUTPUT...
-        #
         #  <premis:eventOutcomeDetailNote>
         #      "generated objects/metadata/tool_output-1415ff13-a27b-48b8-8cb5-3cb627bdb1a1.xml#xpointer(id('techMD_3').xml"
         #  </premis:eventOutcomeDetailNote>
         #
+
+        tool_xlink = ".//METS-tools.{}.xml#xpointer(id('techMD_{}').xml".format(
+            sip_uuid, tool_tech_mds.get(file_uuid)
+        )
         etree.SubElement(
             eventOutcomeDetail, ns.premisBNS + "eventOutcomeDetailNote"
-        ).text = "TODO: We need to find the techMD relating to this event here, e.g. .//metadata/tool_output-{UUID}.xml#xpointer(id('techMD_1').xml"
+        ).text = tool_xlink
 
-        # WELLCOME TODO: We don't generate this in Archivematica either yet.
-        for agent_no in range(3):
+        # WELLCOME TODO: We're also not generating authentic agents for
+        # a metadata extraction event and so these are just the default
+        # agents from the Dashboard table.
+        for agent in Agent.objects.all():
             linkingAgentIdentifier = etree.SubElement(
                 event, ns.premisBNS + "linkingAgentIdentifier"
             )
             etree.SubElement(
                 linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierType"
-            ).text = "TODO: Agent: {}".format(agent_no)
+            ).text = agent.identifiertype
             etree.SubElement(
                 linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierValue"
-            ).text = "TODO: Agent identifier: {}".format(agent_no)
+            ).text = agent.identifiervalue
 
         events.append(event)
     return events
@@ -1089,6 +1117,7 @@ def getAMDSec(
     baseDirectoryPath,
     state,
     representation_id=None,
+    tool_tech_mds=None,
 ):
     """
     Creates an amdSec.
@@ -1146,7 +1175,7 @@ def getAMDSec(
             )
             AMD.append(digiprovMD)
 
-    for a in createDigiprovMD(fileUUID, state):
+    for a in createDigiprovMD(fileUUID, sip_uuid, state, tool_tech_mds):
         AMD.append(a)
 
     return ret
@@ -1245,6 +1274,7 @@ def createFileSec(
     state,
     includeAmdSec=True,
     representation_id=None,
+    tool_tech_mds=None,
 ):
 
     """Creates fileSec and structMap entries for files on disk recursively.
@@ -1315,8 +1345,8 @@ def createFileSec(
                 state,
                 includeAmdSec=includeAmdSec,
                 representation_id=representation_id,
+                tool_tech_mds=tool_tech_mds,
             )
-
         elif os.path.isfile(itemdirectoryPath):
             # Setup variables for creating file metadata
             DMDIDS = ""
@@ -1549,6 +1579,7 @@ def createFileSec(
                         ("OTHERLOCTYPE", "SYSTEM"),
                     ],
                 )
+
                 if includeAmdSec:
                     AMD, ADMID = getAMDSec(
                         job,
@@ -1562,6 +1593,7 @@ def createFileSec(
                         baseDirectoryPath,
                         state,
                         representation_id,
+                        tool_tech_mds=tool_tech_mds,
                     )
                     state.amdSecs.append(AMD)
                     file_elem.set("ADMID", ADMID)
@@ -1867,7 +1899,7 @@ def add_normative_structmap_div(
         path_to_el[fsitem.path] = el
 
 
-def create_mets(job, opts):
+def create_mets(job, opts, tool_tech_mds=None):
     """Create METS
 
     Do all the things, and create the METS!
@@ -1991,6 +2023,7 @@ def create_mets(job, opts):
         state,
         includeAmdSec=includeAmdSec,
         representation_id=representation_id,
+        tool_tech_mds=tool_tech_mds,
     )
 
     el = create_object_metadata(job, structMapDivObjects, baseDirectoryPath, state)
@@ -2011,6 +2044,7 @@ def create_mets(job, opts):
         directories,
         state,
         includeAmdSec=includeAmdSec,
+        tool_tech_mds=tool_tech_mds,
     )
 
     fileSec = etree.Element(ns.metsBNS + "fileSec")
