@@ -272,7 +272,9 @@ def _generate_structural_relationship(sub_type, rel_uuid):
 
 
 def _generate_repr_premis(dir_obj, representation_id):
-    """Do something..."""
+    """Generate the PREMIS object required for a representation using
+    METSRW.
+    """
 
     object_identifiers = (
         (
@@ -292,7 +294,7 @@ def _generate_repr_premis(dir_obj, representation_id):
 
 
 def create_aip_representation(dir_obj, relative_dir_path, representation_id):
-    """Do something..."""
+    """Create an amdSec for the representation."""
 
     DMDSEC = "amdSec"
 
@@ -870,6 +872,17 @@ def createDigiprovMD(fileUUID, sip_uuid, state, tool_tech_mds=None):
         file_uuid=fileUUID, sip_uuid=sip_uuid, tool_tech_mds=tool_tech_mds
     )
     for metadata_event in metadata_events:
+        state.globalDigiprovMDCounter += 1
+        digiprovMD = etree.Element(
+            ns.metsBNS + "digiprovMD",
+            ID="digiprovMD_" + str(state.globalDigiprovMDCounter),
+        )
+        ret.append(digiprovMD)
+
+        mdWrap = etree.SubElement(
+            digiprovMD, ns.metsBNS + "mdWrap", MDTYPE="PREMIS:EVENT"
+        )
+        xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
         xmlData.append(metadata_event)
 
     agents = Agent.objects.filter(event__file_uuid_id=fileUUID).distinct()
@@ -1048,7 +1061,7 @@ def create_metadata_event(file_uuid, sip_uuid, tool_tech_mds):
         #  </premis:eventOutcomeDetailNote>
         #
 
-        tool_xlink = ".//METS-tools.{}.xml#xpointer(id('techMD_{}').xml".format(
+        tool_xlink = "\"METS-tools.{}.xml#xpointer(id('{}').xml\"".format(
             sip_uuid, tool_tech_mds.get(file_uuid)
         )
         etree.SubElement(
@@ -1783,6 +1796,8 @@ def create_object_metadata(job, struct_map, baseDirectoryPath, state):
     return el
 
 
+# WELLCOME TODO: Note, we no longer output METS validation scripts here
+# as PIM doesn't really work for us any-more.
 def write_mets(tree, filename):
     """
     Write tree to filename, and a validate METS form.

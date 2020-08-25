@@ -28,10 +28,11 @@ def remove_logical_structmap(mets):
         ".//mets:structMap[@TYPE='logical']", namespaces=ns.NSMAP
     )
     mets_root.remove(struct_map)
-    return mets_root
+    mets = etree.ElementTree(mets_root)
+    return mets
 
 
-def find_tool_tech_mds(mets):
+def find_tool_tech_mds(mets, aip_uuid):
     """Find tech mds
 
     Retrieve all of the tech_mds from the tools document and return
@@ -43,7 +44,7 @@ def find_tool_tech_mds(mets):
     for tech_md in tech_mds:
         file_name = tech_md.find(".//premis:originalName", namespaces=ns.NSMAP).text
         try:
-            file_obj = File.objects.get(originallocation=file_name)
+            file_obj = File.objects.get(sip_id=aip_uuid, originallocation=file_name)
             premis_id = file_obj.uuid
         except File.DoesNotExist:
             continue
@@ -130,7 +131,6 @@ def create_tool_mets(job, opts):
     # https://github.com/archivematica/Issues/issues/1272
     if create_normative_structmap:
         mets = remove_logical_structmap(mets)
-        mets = etree.ElementTree(mets)
         mets.write(
             mets_tool_path, pretty_print=True, xml_declaration=True, encoding="UTF-8"
         )
@@ -139,5 +139,5 @@ def create_tool_mets(job, opts):
 
     # The primary METS needs a mapping to the new tech MD values to
     # create a mapping that can be useful to the reader.
-    tool_tech_mds = find_tool_tech_mds(mets)
+    tool_tech_mds = find_tool_tech_mds(mets, aip_uuid=aip_uuid)
     return tool_tech_mds
