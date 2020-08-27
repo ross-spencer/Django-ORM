@@ -2110,21 +2110,28 @@ def create_mets(job, opts, tool_tech_mds=None):
     for amdSec in state.amdSecs:
         root.append(amdSec)
 
-    # WELLCOME TODO: Another quick and dirty approach to demoing our
-    # savings but I don't think this is going to be enough... for one,
-    # I think there's a lot more detail in how the different sections
-    # accumulate detail above, but this also needs to be determined.
+    # WELLCOME TODO: We replace the three sections below with the
+    # three preceding lines. The file_sec, structmap, and normative
+    # structmap are all created using an updated mechanism in this
+    # work which can replace some of the legacy code if it proves
+    # through testing to be valid/accurate/correct etc.
     #
-    # root.append(fileSec)
-    # root.append(structMap)
-    # if normativeStructMap is not None:
-    #    root.append(normativeStructMap)
+    root.append(fileSec)
+    root.append(structMap)
+    if normativeStructMap is not None:
+        root.append(normativeStructMap)
     #
-    file_sec, structmap, normative_structmap = create_mets_structure(job, opts)
-    root.append(file_sec)
-    root.append(structmap)
-    if createNormativeStructmap:
-        root.append(normative_structmap)
+    # WELLCOME TODO: There are still weaknesses with trying to use the
+    # transfer METS mechanism to do what we want to do here. Largely
+    # with the amdSec indices which are getting confused all over the
+    # place. metsrw wants to know about the context of the document as
+    # a whole. We're trying to swap pieces in and out until we've
+    # refactored the piece.
+    # file_sec, structmap, normative_structmap = create_mets_structure(job, opts)
+    # root.append(file_sec)
+    # root.append(structmap)
+    # if createNormativeStructmap:
+    #    root.append(normative_structmap)
 
     for custom_structmap in include_custom_structmap(job, baseDirectoryPath, state):
         root.append(custom_structmap)

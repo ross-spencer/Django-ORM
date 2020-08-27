@@ -101,6 +101,7 @@ class FSEntriesTree(object):
         dir_entries = sorted(scandir.scandir(path), key=lambda d: d.name)
         for dir_entry in dir_entries:
             entry_relative_path = os.path.relpath(dir_entry.path, start=self.root_path)
+
             if dir_entry.is_dir():
                 fsentry = metsrw.FSEntry(
                     path=entry_relative_path, label=dir_entry.name, type="Directory"
@@ -148,6 +149,7 @@ class FSEntriesTree(object):
             fsentry.checksumtype = convert_to_premis_hash_function(
                 file_obj.checksumtype
             )
+            fsentry.use = file_obj.filegrpuse
             premis_object = file_obj_to_premis(file_obj)
             if premis_object is not None:
                 fsentry.add_premis_object(premis_object)
