@@ -152,6 +152,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--original", action="store_true")
     parser.add_argument("--reduced", action="store_true")
+    parser.add_argument("--reduced_extra", action="store_true")
     args = parser.parse_args()
     if len(sys.argv) == 1:
         args.original = True
@@ -165,6 +166,9 @@ def main():
     if args.reduced:
         print("Running against the reduced METS creation script...")
         import v1_create_aip_mets as create_aip_mets
+    if args.reduced_extra:
+        print("Running against the reduced METS creation script...")
+        import v2_create_aip_mets as create_aip_mets
     mets_runner(create_aip_mets)
 
 
