@@ -129,14 +129,17 @@ class FSEntriesTree(object):
             offset += self.QUERY_BATCH_SIZE
             limit += self.QUERY_BATCH_SIZE
 
-    def load_file_data_from_db(self):
+    def retrieve_file_objs(self):
+        """Helper function to retrieve reamaining file objects in the
+        Database for processing into a METS file.
+        """
         file_objs = self.file_queryset.filter(
             sip=self.transfer, removedtime__isnull=True
         )
-
         for file_obj in self._batch_query(file_objs):
             try:
-                fsentry = self.file_index[file_obj.currentlocation]
+                self.file_index[file_obj.currentlocation]
+                yield file_obj
             except KeyError:
                 logger.info(
                     "File is no longer present on the filesystem: %s",
@@ -144,6 +147,12 @@ class FSEntriesTree(object):
                 )
                 continue
 
+    def load_file_data_from_db(self):
+        """Load the file data from the database if the files still
+        remain on disk.
+        """
+        for file_obj in self.retrieve_file_objs():
+            fsentry = self.file_index[file_obj.currentlocation]
             fsentry.file_uuid = file_obj.uuid
             fsentry.checksum = file_obj.checksum
             fsentry.checksumtype = convert_to_premis_hash_function(
@@ -324,6 +333,75 @@ def dir_obj_to_premis(dir_obj, relative_dir_path=""):
         + object_identifiers
         + (("original_name", original_name),)
     )
+
+    return metsrw.plugins.premisrw.data_to_premis(
+        premis_data, premis_version=IE_PREMIS_META["version"]
+    )
+
+
+def event_to_premis(event):
+    """
+    Converts an Event model to a PREMIS event object via metsrw.
+    Returns:
+        lxml.etree._Element
+    """
+    premis_data = (
+        "event",
+        PREMIS_META,
+        (
+            "event_identifier",
+            ("event_identifier_type", "UUID"),
+            ("event_identifier_value", event.event_id),
+        ),
+        ("event_type", event.event_type),
+        ("event_date_time", event.event_datetime),
+        ("event_detail_information", ("event_detail", event.event_detail)),
+        (
+            "event_outcome_information",
+            ("event_outcome", event.event_outcome),
+            (
+                "event_outcome_detail",
+                ("event_outcome_detail_note", event.event_outcome_detail),
+            ),
+        ),
+    )
+    for agent in event.agents.all():
+        premis_data += (
+            (
+                "linking_agent_identifier",
+                ("linking_agent_identifier_type", agent.identifiertype),
+                ("linking_agent_identifier_value", agent.identifiervalue),
+            ),
+        )
+
+    return metsrw.plugins.premisrw.data_to_premis(
+        premis_data, premis_version=PREMIS_META["version"]
+    )
+
+    # WELLCOME TODO: Add linking object and identifier here...
+    # TODO: leave a note about compatibility with transfer METS in that
+    # regard.
+    """
+    <premis:linkingObjectIdentifier>
+      <premis:linkingObjectIdentifierType>UUID</premis:linkingObjectIdentifierType>
+      <premis:linkingObjectIdentifierValue>28dfc325-22c5-4070-939f-ac9020ed179d</premis:linkingObjectIdentifierValue>
+      <premis:linkingObjectRole>Source</premis:linkingObjectRole>
+    </premis:linkingObjectIdentifier>
+    """
+
+
+def agents_to_premis(agent_record):
+    agent_data = (
+        (
+            "agent_identifier",
+            ("agent_identifier_type", agent_record.identifiertype),
+            ("agent_identifier_value", agent_record.identifiervalue),
+        ),
+        ("agent_name", agent_record.name),
+        ("agent_type", agent_record.agenttype),
+    )
+
+    premis_data = ("agent", IE_PREMIS_META) + agent_data
 
     return metsrw.plugins.premisrw.data_to_premis(
         premis_data, premis_version=IE_PREMIS_META["version"]

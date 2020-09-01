@@ -81,7 +81,13 @@ from create_mets_dataverse_v2 import (
 # WELLCOME TODO: Reduced METS specific imports.
 import metsrw
 import uuid
-from v2_fs_entries_tree import dir_obj_to_premis, IE_PREMIS_META, FSEntriesTree
+from v2_fs_entries_tree import (
+    dir_obj_to_premis,
+    IE_PREMIS_META,
+    FSEntriesTree,
+    event_to_premis,
+    agents_to_premis,
+)
 
 # from custom_handlers import get_script_logger
 import logging
@@ -851,164 +857,84 @@ def createDigiprovMD(fileUUID, sip_uuid, state, tool_tech_mds=None):
     """
     Create digiprovMD for PREMIS Events and linking Agents.
     """
+    PREMIS_EVENT = "PREMIS:EVENT"
+
+    DIGIPROV_NAME = "digiprovMD"
+
+    MDWRAP_NAME = "mdWrap"
+    MDWRAP_ATTR = "{}{}".format(ns.metsBNS, MDWRAP_NAME)
+
+    XMLDATA_NAME = "xmlData"
+    XMLDATA_ATTR = "{}{}".format(ns.metsBNS, XMLDATA_NAME)
+
     ret = []
 
+    # WELLCOME TODO: We need to create our events synthetically for
+    # demonstration purposes until Archivematica creates them
+    # authentically.
+    event_ids = create_metadata_event(
+        file_uuid=fileUUID, sip_uuid=sip_uuid, tool_tech_mds=tool_tech_mds
+    )
     events = Event.objects.filter(file_uuid_id=fileUUID)
+
     for event_record in events:
         state.globalDigiprovMDCounter += 1
         digiprovMD = etree.Element(
-            ns.metsBNS + "digiprovMD",
-            ID="digiprovMD_" + str(state.globalDigiprovMDCounter),
+            DIGIPROV_NAME,
+            ID="{}_{}".format(DIGIPROV_NAME, state.globalDigiprovMDCounter),
         )
         ret.append(digiprovMD)
+        mdWrap = etree.SubElement(digiprovMD, MDWRAP_ATTR, MDTYPE=PREMIS_EVENT)
+        xmlData = etree.SubElement(mdWrap, XMLDATA_ATTR)
+        xmlData.append(event_to_premis(event_record))
 
-        mdWrap = etree.SubElement(
-            digiprovMD, ns.metsBNS + "mdWrap", MDTYPE="PREMIS:EVENT"
-        )
-        xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
-        xmlData.append(createEvent(event_record))
+    # WELLCOME TODO: As we temporarily create our new events we should
+    # also do good and clean them up.
+    delete_metadata_event(event_ids)
 
-    metadata_events = create_metadata_event(
-        file_uuid=fileUUID, sip_uuid=sip_uuid, tool_tech_mds=tool_tech_mds
-    )
-    for metadata_event in metadata_events:
-        state.globalDigiprovMDCounter += 1
-        digiprovMD = etree.Element(
-            ns.metsBNS + "digiprovMD",
-            ID="digiprovMD_" + str(state.globalDigiprovMDCounter),
-        )
-        ret.append(digiprovMD)
-
-        mdWrap = etree.SubElement(
-            digiprovMD, ns.metsBNS + "mdWrap", MDTYPE="PREMIS:EVENT"
-        )
-        xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
-        xmlData.append(metadata_event)
-
-    agents = Agent.objects.filter(event__file_uuid_id=fileUUID).distinct()
-    for agent in agents:
-        state.globalDigiprovMDCounter += 1
-        digiprovMD = etree.Element(
-            ns.metsBNS + "digiprovMD",
-            ID="digiprovMD_" + str(state.globalDigiprovMDCounter),
-        )
-        ret.append(digiprovMD)
-
-        mdWrap = etree.SubElement(
-            digiprovMD, ns.metsBNS + "mdWrap", MDTYPE="PREMIS:AGENT"
-        )
-        xmlData = etree.SubElement(mdWrap, ns.metsBNS + "xmlData")
-        xmlData.append(createAgent(agent))
+    # WELLCOME TODO: Do we need linking object creation event here?
 
     return ret
 
 
-def createEvent(event_record):
-    """ Returns a PREMIS Event. """
-    event = etree.Element(ns.premisBNS + "event", nsmap={"premis": ns.premisNS})
-    event.set(
-        ns.xsiBNS + "schemaLocation",
-        ns.premisNS + " http://www.loc.gov/standards/premis/v3/premis.xsd",
-    )
-    event.set("version", "3.0")
-
-    eventIdentifier = etree.SubElement(event, ns.premisBNS + "eventIdentifier")
-    etree.SubElement(
-        eventIdentifier, ns.premisBNS + "eventIdentifierType"
-    ).text = "UUID"
-    etree.SubElement(eventIdentifier, ns.premisBNS + "eventIdentifierValue").text = str(
-        event_record.event_id
-    )
-
-    etree.SubElement(event, ns.premisBNS + "eventType").text = event_record.event_type
-    etree.SubElement(
-        event, ns.premisBNS + "eventDateTime"
-    ).text = event_record.event_datetime.isoformat()
-
-    eventDetailInformation = etree.SubElement(
-        event, ns.premisBNS + "eventDetailInformation"
-    )
-    etree.SubElement(
-        eventDetailInformation, ns.premisBNS + "eventDetail"
-    ).text = escape(event_record.event_detail)
-
-    eventOutcomeInformation = etree.SubElement(
-        event, ns.premisBNS + "eventOutcomeInformation"
-    )
-    etree.SubElement(
-        eventOutcomeInformation, ns.premisBNS + "eventOutcome"
-    ).text = event_record.event_outcome
-
-    if event_record.event_outcome_detail != "":
-        """PREMIS does not require this field if it is empty."""
-    eventOutcomeDetail = etree.SubElement(
-        eventOutcomeInformation, ns.premisBNS + "eventOutcomeDetail"
-    )
-    etree.SubElement(
-        eventOutcomeDetail, ns.premisBNS + "eventOutcomeDetailNote"
-    ).text = escape(event_record.event_outcome_detail)
-
-    # linkingAgentIdentifier
-    for agent in event_record.agents.all():
-        linkingAgentIdentifier = etree.SubElement(
-            event, ns.premisBNS + "linkingAgentIdentifier"
-        )
-        etree.SubElement(
-            linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierType"
-        ).text = agent.identifiertype
-        etree.SubElement(
-            linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierValue"
-        ).text = agent.identifiervalue
-    return event
-
-
-# WELLCOME TODO: This function needs to be refactored it's a quick and
-# dirty ctrl-v function for demonstration purposes.
-#
-# METSRW related: https://github.com/artefactual-labs/mets-reader-writer/issues/43
-#
-# Characterization commands do not have events associated with them in
-# Archivematica yet, what happens if we create them? Is that
-# information usable to us in any way here?
-#
 def create_metadata_event(file_uuid, sip_uuid, tool_tech_mds):
     """Create metadata event
 
-    This is a temporary function that does need a refactor.
-    """
+    This is a temporary function.
 
-    # WELLCOME TODO: Is this the right logic, we need a new event per
-    # tool?
-    #
-    # +14 lines per file where this is done.
-    #
-    objs = create_premis_object_characteristics_extensions(file_uuid)
-    events = []
-    if not objs:
-        return events
+    Characterization commands do not have events associated with them in
+    Archivematica yet, what happens if we create them? Is that
+    information usable to us in any way here?
+
+    GitHub related: https://github.com/artefactual-labs/mets-reader-writer/issues/43
+
+    """
+    MD_EXTRACT_TYPE = "metadata extraction"
+    tool_xlink = "\"METS-tools.{}.xml#xpointer(id('{}').xml\"".format(
+        sip_uuid, tool_tech_mds.get(file_uuid)
+    )
     # WELLCOME TODO: We might want a separate extract event per tool?
     # 1. It's currently being output in a single tech_md in the tool
     #    mets.
     # 2. That logic might be the same a as the transfer METS as well and
     #    so let's check that.
+    objs = create_premis_object_characteristics_extensions(file_uuid)
+    events = []
+    event_ids = []
+    if not objs:
+        return events
     for obj in objs[0]:
-        event = etree.Element(ns.premisBNS + "event", nsmap={"premis": ns.premisNS})
-        event.set(
-            ns.xsiBNS + "schemaLocation",
-            ns.premisNS + " http://www.loc.gov/standards/premis/v3/premis.xsd",
-        )
-        event.set("version", "3.0")
-
-        eventIdentifier = etree.SubElement(event, ns.premisBNS + "eventIdentifier")
-        etree.SubElement(
-            eventIdentifier, ns.premisBNS + "eventIdentifierType"
-        ).text = "UUID"
-        etree.SubElement(
-            eventIdentifier, ns.premisBNS + "eventIdentifierValue"
-        ).text = str(uuid4())
-
-        etree.SubElement(event, ns.premisBNS + "eventType").text = "metadata extraction"
-
+        event_id = str(uuid.uuid4())
+        event_record = Event()
+        event_record.event_id = event_id
+        event_record.file_uuid = File.objects.filter(uuid=file_uuid).first()
+        event_record.event_type = MD_EXTRACT_TYPE
+        event_record.event_outcome_detail = tool_xlink
+        # WELLCOME TODO: EVENT DATATIME IS SET TO NOW AUTOMATICALLY BY
+        # THE MODEL SO IT ISN"T ACTUALLY AUTHENTIC TO THE EVENT WE
+        # WANT TO CREATE HERE. IT IS LIKELY WE WILL NEED TO CREATE THE
+        # EVENT IN THE FPR INSTEAD.
+        #
         # WELLCOME TODO: We haven't a datetime associated with an event.
         #
         # mysql> describe main_fpcommandoutput;
@@ -1027,95 +953,106 @@ def create_metadata_event(file_uuid, sip_uuid, tool_tech_mds):
         #
         # Metadata extract commands are "characterization" in the FPR.
         #
-        etree.SubElement(
-            event, ns.premisBNS + "eventDateTime"
-        ).text = "1970-01-16T21:36:32.470035+00:00"
-
-        eventDetailInformation = etree.SubElement(
-            event, ns.premisBNS + "eventDetailInformation"
-        )
-
-        # WELLCOME TODO: Event outcome information isn't output.
-        etree.SubElement(eventDetailInformation, ns.premisBNS + "eventDetail").text = ""
-
-        eventOutcomeInformation = etree.SubElement(
-            event, ns.premisBNS + "eventOutcomeInformation"
-        )
-
-        # WELLCOME TODO: When we re-write the events functions here I
-        # noticed that per sé (with accent) isn't valid on output... we
-        # can probably do better with Unicode. METSRW might help.
-        #
-        # An event outcome isn't output.
-        #
-        etree.SubElement(
-            eventOutcomeInformation, ns.premisBNS + "eventOutcome"
-        ).text = ""
-
-        eventOutcomeDetail = etree.SubElement(
-            eventOutcomeInformation, ns.premisBNS + "eventOutcomeDetail"
-        )
-
-        #  <premis:eventOutcomeDetailNote>
-        #      "generated objects/metadata/tool_output-1415ff13-a27b-48b8-8cb5-3cb627bdb1a1.xml#xpointer(id('techMD_3').xml"
-        #  </premis:eventOutcomeDetailNote>
-        #
-
-        tool_xlink = "\"METS-tools.{}.xml#xpointer(id('{}').xml\"".format(
-            sip_uuid, tool_tech_mds.get(file_uuid)
-        )
-        etree.SubElement(
-            eventOutcomeDetail, ns.premisBNS + "eventOutcomeDetailNote"
-        ).text = tool_xlink
-
-        # WELLCOME TODO: We're also not generating authentic agents for
-        # a metadata extraction event and so these are just the default
-        # agents from the Dashboard table.
-        for agent in Agent.objects.all():
-            linkingAgentIdentifier = etree.SubElement(
-                event, ns.premisBNS + "linkingAgentIdentifier"
-            )
-            etree.SubElement(
-                linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierType"
-            ).text = agent.identifiertype
-            etree.SubElement(
-                linkingAgentIdentifier, ns.premisBNS + "linkingAgentIdentifierValue"
-            ).text = agent.identifiervalue
-
-        events.append(event)
-    return events
+        event_record.save()
+        event_record.agents = Agent.objects.all()
+        events.append(event_record)
+        event_ids.append(event_id)
+    return event_ids
 
 
-def create_premis_object_characteristics_extensions(fileUUID):
+# WELLCOME TODO: WE MIGHT NOT NEED TO DELETE THESE EVENTS, BUT WE CAN
+# BE GOOD CITIZENS AND DO IT ANYWAY...
+def delete_metadata_event(event_ids):
+    """Delete the temporary events created fro the Wellcome work."""
+    for event_id in event_ids:
+        Event.objects.filter(event_id=event_id).delete()
+
+
+def create_premis_object_characteristics_extensions(file_uuid):
     """Create PREMIS object characteristics extension
 
     Return true if we need to generate tool output, false if not.
     """
     return FPCommandOutput.objects.filter(
-        file_id=fileUUID,
+        file_id=file_uuid,
         rule__purpose__in=["characterization", "default_characterization"],
     ).values_list("content")
 
 
-def createAgent(agent_record):
-    """ Creates a PREMIS Agent as a SubElement of digiprovMD. """
-    agent = etree.Element(ns.premisBNS + "agent", nsmap={"premis": ns.premisNS})
-    agent.set(
-        ns.xsiBNS + "schemaLocation",
-        ns.premisNS + " http://www.loc.gov/standards/premis/v3/premis.xsd",
-    )
-    agent.set("version", "3.0")
+def _get_fsentry_tree(opts):
+    """Return the AIP object to generate METS from."""
+    base_directory_path = opts.baseDirectoryPath
+    base_directory_path_string = "%%%s%%" % (opts.baseDirectoryPathString)
+    aip_uuid = opts.fileGroupIdentifier
 
-    agentIdentifier = etree.SubElement(agent, ns.premisBNS + "agentIdentifier")
-    etree.SubElement(
-        agentIdentifier, ns.premisBNS + "agentIdentifierType"
-    ).text = agent_record.identifiertype
-    etree.SubElement(
-        agentIdentifier, ns.premisBNS + "agentIdentifierValue"
-    ).text = agent_record.identifiervalue
-    etree.SubElement(agent, ns.premisBNS + "agentName").text = agent_record.name
-    etree.SubElement(agent, ns.premisBNS + "agentType").text = agent_record.agenttype
-    return agent
+    # Wellcome TODO: this is way too finicky... also, it looks like we're
+    # not using the second line.
+    base_directory_path = os.path.join(base_directory_path, "")
+    objects_directory_path = os.path.join(base_directory_path, "objects")
+
+    objects_directory_path = base_directory_path
+
+    try:
+        aip = SIP.objects.get(uuid=aip_uuid)
+    except SIP.DoesNotExist:
+        logger.info("No record in database for transfer: %s", aip_uuid)
+        raise
+
+    fsentry_tree = FSEntriesTree(
+        objects_directory_path, base_directory_path_string, aip
+    )
+
+    return fsentry_tree
+
+
+def create_agent_premis_obj(job, opts, state):
+    """Returns a set of PREMIS agent objects wrapped in an amdSec to be
+    appended to the tree which will link the other PREMIS object
+    properties to their agent information.
+    """
+    PREMIS_AGENT = "PREMIS:AGENT"
+
+    AMDSEC_NAME = "amdSec"
+    AMDSEC_ATTR = "{}{}".format(ns.metsBNS, AMDSEC_NAME)
+
+    DIGIPROV_NAME = "digiprovMD"
+
+    MDWRAP_NAME = "mdWrap"
+    MDWRAP_ATTR = "{}{}".format(ns.metsBNS, MDWRAP_NAME)
+
+    XMLDATA_NAME = "xmlData"
+    XMLDATA_ATTR = "{}{}".format(ns.metsBNS, XMLDATA_NAME)
+
+    # WELLCOME TODO: Change the logic so we're only doing this once in
+    # the entire module. We only need to do it once, and as it requires
+    # some access to the disk, can slow us down. Update: it really
+    # slows us down! It also has to be used in the Tool output which
+    # is a triple impact.
+    fsentry_tree = _get_fsentry_tree(opts)
+    fsentry_tree.scan()
+    file_objs = fsentry_tree.retrieve_file_objs()
+    # Retrieve all unique agents associated with every file object in
+    # the transfer.
+    all_agents = set()
+    for file_obj in file_objs:
+        agents = Agent.objects.filter(event__file_uuid_id=file_obj.uuid).distinct()
+        for agent in agents:
+            all_agents.add(agent)
+    state.globalAmdSecCounter += 1
+    amd_id = "{}_{}".format(AMDSEC_NAME, state.globalAmdSecCounter)
+    amd_sec = etree.Element(AMDSEC_ATTR, ID=amd_id)
+    for agent_record in all_agents:
+        agent = agents_to_premis(agent_record)
+        state.globalDigiprovMDCounter += 1
+        digiprov_md = etree.Element(
+            ns.metsBNS + DIGIPROV_NAME,
+            ID="{}_{}".format(DIGIPROV_NAME, state.globalDigiprovMDCounter),
+        )
+        amd_sec.append(digiprov_md)
+        md_wrap = etree.SubElement(digiprov_md, MDWRAP_ATTR, MDTYPE=PREMIS_AGENT)
+        xml_data = etree.SubElement(md_wrap, XMLDATA_ATTR)
+        xml_data.append(agent)
+    return amd_sec
 
 
 def getAMDSec(
@@ -2110,6 +2047,10 @@ def create_mets(job, opts, tool_tech_mds=None):
     for amdSec in state.amdSecs:
         root.append(amdSec)
 
+    # The agent object is its own amdSec and appended to the others, and
+    # before the fileSec in this case.
+    root.append(create_agent_premis_obj(job, opts, state))
+
     # WELLCOME TODO: We replace the three sections below with the
     # three preceding lines. The file_sec, structmap, and normative
     # structmap are all created using an updated mechanism in this
@@ -2214,31 +2155,13 @@ def create_mets_structure(job, opts):
         * Other TODOs in-line.
 
     """
-    base_directory_path = opts.baseDirectoryPath
-    base_directory_path_string = "%%%s%%" % (opts.baseDirectoryPathString)
     aip_uuid = opts.fileGroupIdentifier
 
-    # Wellcome TODO: this is way too finicky... also, it looks like we're
-    # not using the second line.
-    base_directory_path = os.path.join(base_directory_path, "")
-    objects_directory_path = os.path.join(base_directory_path, "objects")
-
-    objects_directory_path = base_directory_path
+    fsentry_tree = _get_fsentry_tree(opts)
+    fsentry_tree.scan()
 
     mets = metsrw.METSDocument()
     mets.objid = str(aip_uuid)
-
-    try:
-        aip = SIP.objects.get(uuid=aip_uuid)
-    except SIP.DoesNotExist:
-        logger.info("No record in database for transfer: %s", aip_uuid)
-        raise
-
-    fsentry_tree = FSEntriesTree(
-        objects_directory_path, base_directory_path_string, aip
-    )
-    fsentry_tree.scan()
-
     mets.append_file(fsentry_tree.root_node)
 
     file_sec = retrieve_file_sec(mets)
