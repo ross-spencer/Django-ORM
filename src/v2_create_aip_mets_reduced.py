@@ -540,6 +540,39 @@ def generate_id_and_repr(
     repr_amd_sec.append(aggregate_ingestion_event)
 
 
+# WELLCOME TODO: Rewrite to use metsrw tuple syntax.
+def create_repr_relationship(representation_id):
+    """Create an element for a representation relationship"""
+    relationship = etree.Element(ns.premisBNS + "relationship")
+    etree.SubElement(
+        relationship, ns.premisBNS + "relationshipType"
+    ).text = "structural"
+    etree.SubElement(
+        relationship, ns.premisBNS + "relationshipSubType"
+    ).text = "included in"
+
+    relatedObjectIdentifier = etree.SubElement(
+        relationship, ns.premisBNS + "relatedObjectIdentifier"
+    )
+    etree.SubElement(
+        relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierType"
+    ).text = "UUID"
+    etree.SubElement(
+        relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierValue"
+    ).text = representation_id
+    return relationship
+
+
+def create_premis_object_characteristics_extensions(file_uuid):
+    """Create PREMIS object characteristics extension
+
+    Return true if we need to generate tool output, false if not.
+    """
+    return FPCommandOutput.objects.filter(
+        file_id=file_uuid,
+        rule__purpose__in=["characterization", "default_characterization"],
+    ).values_list("content")
+
 # OLD CODE AFTER HERE...................................................
 # OLD CODE AFTER HERE...................................................
 # OLD CODE AFTER HERE...................................................
@@ -1002,29 +1035,6 @@ def create_premis_object_formats(fileUUID):
 
 
 # WELLCOME TODO: Rewrite to use metsrw tuple syntax.
-def create_repr_relationship(representation_id):
-    """Create an element for a representation relationship"""
-    relationship = etree.Element(ns.premisBNS + "relationship")
-    etree.SubElement(
-        relationship, ns.premisBNS + "relationshipType"
-    ).text = "structural"
-    etree.SubElement(
-        relationship, ns.premisBNS + "relationshipSubType"
-    ).text = "included in"
-
-    relatedObjectIdentifier = etree.SubElement(
-        relationship, ns.premisBNS + "relatedObjectIdentifier"
-    )
-    etree.SubElement(
-        relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierType"
-    ).text = "UUID"
-    etree.SubElement(
-        relatedObjectIdentifier, ns.premisBNS + "relatedObjectIdentifierValue"
-    ).text = representation_id
-    return relationship
-
-
-# WELLCOME TODO: Rewrite to use metsrw tuple syntax.
 #
 # ADDITIONAL: This function could do with a rewrite to remove its
 # duplication anyway... Also, in practice, I'm not sure we ever need
@@ -1138,17 +1148,6 @@ def create_premis_object_derivations(fileUUID, representation_id):
         elements.append(relationship)
 
     return elements
-
-
-def create_premis_object_characteristics_extensions(file_uuid):
-    """Create PREMIS object characteristics extension
-
-    Return true if we need to generate tool output, false if not.
-    """
-    return FPCommandOutput.objects.filter(
-        file_id=file_uuid,
-        rule__purpose__in=["characterization", "default_characterization"],
-    ).values_list("content")
 
 
 def getAMDSec(
