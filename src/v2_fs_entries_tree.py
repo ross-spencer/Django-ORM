@@ -339,18 +339,21 @@ def dir_obj_to_premis(dir_obj, relative_dir_path=""):
     )
 
 
-def event_to_premis(event):
+def event_to_premis(event, linking_object_uuids=[]):
     """
     Converts an Event model to a PREMIS event object via metsrw.
     Returns:
         lxml.etree._Element
     """
+    ID_TYPE = "UUID"
+    SOURCE_ROLE = "Source"
+
     premis_data = (
         "event",
         PREMIS_META,
         (
             "event_identifier",
-            ("event_identifier_type", "UUID"),
+            ("event_identifier_type", ID_TYPE),
             ("event_identifier_value", event.event_id),
         ),
         ("event_type", event.event_type),
@@ -374,20 +377,19 @@ def event_to_premis(event):
             ),
         )
 
+    for linking_object_uuid in linking_object_uuids:
+        premis_data += (
+            (
+                "linkingObjectIdentifier",
+                ("linking_object_identifier_type", ID_TYPE),
+                ("linking_object_identifier_value", linking_object_uuid),
+                ("linking_object_role", SOURCE_ROLE),
+            ),
+        )
+
     return metsrw.plugins.premisrw.data_to_premis(
         premis_data, premis_version=PREMIS_META["version"]
     )
-
-    # WELLCOME TODO: Add linking object and identifier here...
-    # TODO: leave a note about compatibility with transfer METS in that
-    # regard.
-    """
-    <premis:linkingObjectIdentifier>
-      <premis:linkingObjectIdentifierType>UUID</premis:linkingObjectIdentifierType>
-      <premis:linkingObjectIdentifierValue>28dfc325-22c5-4070-939f-ac9020ed179d</premis:linkingObjectIdentifierValue>
-      <premis:linkingObjectRole>Source</premis:linkingObjectRole>
-    </premis:linkingObjectIdentifier>
-    """
 
 
 def agents_to_premis(agent_record):
