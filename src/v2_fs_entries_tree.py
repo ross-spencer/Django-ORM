@@ -358,16 +358,31 @@ def event_to_premis(event, linking_object_uuids=[]):
         ),
         ("event_type", event.event_type),
         ("event_date_time", event.event_datetime),
-        ("event_detail_information", ("event_detail", event.event_detail)),
-        (
-            "event_outcome_information",
-            ("event_outcome", event.event_outcome),
-            (
+    )
+
+    if event.event_detail:
+        premis_data += (
+            ("event_detail_information", ("event_detail", event.event_detail)),
+        )
+
+    if event.event_outcome_detail or event.event_outcome:
+        if event.event_outcome_detail:
+            detail = (
                 "event_outcome_detail",
                 ("event_outcome_detail_note", event.event_outcome_detail),
-            ),
-        ),
-    )
+            )
+            try:
+                event_outcome_info += detail
+            except UnboundLocalError:
+                event_outcome_info = detail
+        if event.event_outcome:
+            detail = ("event_outcome", event.event_outcome)
+            try:
+                event_outcome_info += detail
+            except UnboundLocalError:
+                event_outcome_info = detail
+        premis_data += (("event_outcome_information", event_outcome_info),)
+
     for agent in event.agents.all():
         premis_data += (
             (
